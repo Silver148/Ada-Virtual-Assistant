@@ -8,7 +8,7 @@ using json = nlohmann::json;
 class AI_ENGINE{
 
 private:
-    std::string Personalidad = ""; //By default
+    std::string system_prompt = ""; //By default
     std::string API_Key = "";
     json AI_config;
     json memories = json::array();;
@@ -18,7 +18,7 @@ public:
 
     AI_ENGINE();
 
-    void DarPersonalidad(const std::string &Personalidad);
+    void SetSystemPrompt(const std::string &Personalidad);
 
     void SetAPI_Key(const std::string &API_Key);
 

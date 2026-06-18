@@ -55,8 +55,8 @@ void AI_ENGINE::SetAPI_Key(const std::string &API_Key){
     this->API_Key = API_Key;
 }
 
-void AI_ENGINE::DarPersonalidad(const std::string &Personalidad){
-        this->Personalidad = Personalidad;
+void AI_ENGINE::SetSystemPrompt(const std::string &system_prompt){
+        this->system_prompt = system_prompt;
 }
 
 std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
@@ -69,7 +69,7 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
 
         AI_config["messages"] = json::array();
        
-        AI_config["messages"].push_back({{"role", "system"}, {"content", this->Personalidad}});
+        AI_config["messages"].push_back({{"role", "system"}, {"content", this->system_prompt}});
 
         for (const auto& msg : memories) {
             if (msg["role"] != "system") {
