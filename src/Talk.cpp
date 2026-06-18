@@ -6,42 +6,44 @@ Talk.cpp
 
 #include "Talk.hpp"
 
-void AdaVoice::TalkAda(std::string message) {
-
-    HRESULT hr_com = ::CoInitialize(NULL);
+AdaVoice::AdaVoice() : pVoice(NULL) {
+    ::CoInitialize(NULL);
     
-    ISpVoice* pLocalVoice = NULL;
-
-    HRESULT hr = ::CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pLocalVoice);
+    HRESULT hr = ::CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
     
-    if (SUCCEEDED(hr) && pLocalVoice != NULL) {
-        
+    if (SUCCEEDED(hr) && pVoice != NULL) {
         IEnumSpObjectTokens* pEnum = NULL;
-        if (SUCCEEDED(SpEnumTokens(SPCAT_VOICES, L"Gender=Female;Name=Microsoft Sabina", NULL, &pEnum))) { //By default in spanish, haha, xD
+        if (SUCCEEDED(SpEnumTokens(SPCAT_VOICES, L"Gender=Female;Name=Microsoft Sabina", NULL, &pEnum))) {
             ISpObjectToken* pToken = NULL;
             if (pEnum->Next(1, &pToken, NULL) == S_OK) {
-                pLocalVoice->SetVoice(pToken);
+                pVoice->SetVoice(pToken);
                 pToken->Release();
             }
             pEnum->Release();
         }
-
-        if (!message.empty()) {
-            int size_needed = MultiByteToWideChar(CP_UTF8, 0, &message[0], (int)message.size(), NULL, 0);
-            
-            std::wstring wide_text(size_needed, 0);
-            
-            MultiByteToWideChar(CP_UTF8, 0, &message[0], (int)message.size(), &wide_text[0], size_needed);
-
-            pLocalVoice->Speak(wide_text.c_str(), SPF_DEFAULT, NULL); 
-        }
-
-        pLocalVoice->Release();
     }
+}
 
-    if (SUCCEEDED(hr_com)) {
-        ::CoUninitialize();
+AdaVoice::~AdaVoice(){
+    if (pVoice != NULL) {
+        pVoice->Release();
+        pVoice = NULL;
     }
+    ::CoUninitialize();
+}
+
+void AdaVoice::TalkAda(std::string message) {
+
+    if (pVoice == NULL || message.empty()) return;
+
+    pVoice->Speak(NULL, SPF_PURGEBEFORESPEAK, NULL);
+
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &message[0], (int)message.size(), NULL, 0);
+    
+    std::wstring wide_text(size_needed, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, &message[0], (int)message.size(), &wide_text[0], size_needed);
+
+    pVoice->Speak(wide_text.c_str(), SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 }
 
 std::string AdaVoice::CleanTextForTalk(const std::string& message) {

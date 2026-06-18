@@ -16,6 +16,8 @@ private:
 public:
     
     void TalkAda(std::string message);
+    AdaVoice();
+    ~AdaVoice();
     std::string CleanTextForTalk(const std::string& message);
 
 };

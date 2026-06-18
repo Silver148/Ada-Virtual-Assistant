@@ -10,7 +10,7 @@ GUI.cpp
 #define FRAME_WIDTH 205
 #define FRAME_HEIGHT 200
 
-GUI::GUI(){
+GUI::GUI() : voice(){
     SDL_Init(SDL_INIT_VIDEO);
     IMG_Init(IMG_INIT_PNG);
     TTF_Init();
@@ -413,6 +413,9 @@ void GUI::RenderGui(AI_ENGINE AI){
                     maxUserScrollY = 0;
 
                     std::thread AIThread([&AI, prompt, this](){
+
+                        ::CoInitializeEx(NULL, COINIT_MULTITHREADED); //For voice thread
+
                         this->ResponseText = AI.SendPrompt(prompt);
 
                         if(!this->ResponseText.empty()){
@@ -606,6 +609,8 @@ void GUI::RenderGui(AI_ENGINE AI){
                             //std::cout << "Ada says: " << this->ResponseText << std::endl;
                                 
                         }
+
+                        ::CoUninitialize();
                     });
 
                     AIThread.detach();
