@@ -1,5 +1,7 @@
 # 🤖 Ada — Virtual Assistant
 
+![Ada_Logo](Ada-ICON.png)
+
 **Ada** es una asistente virtual de escritorio desarrollada nativamente en **C++** utilizando **SDL2** para la interfaz gráfica y la API de **OpenRouter** para el motor de inteligencia artificial. Cuenta con un sistema de voz fluido en español nativo a través de la API SAPI de Windows y memoria persistente de conversación.
 
 ---
@@ -22,3 +24,5 @@ Para compilar y correr este proyecto desde cero necesitas las siguientes herrami
 * **Librería de Red:** `libcurl` para la gestión de peticiones HTTP POST.
 * **Parser JSON:** `nlohmann/json` (incluido localmente en el header `json.hpp`).
 * **Clonar submódulo md4c:** Para ello ejecuta el comando `git submodule update --init --recursive`
+
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
