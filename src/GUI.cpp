@@ -620,7 +620,7 @@ void GUI::RenderGui(AI_ENGINE AI){
 
         if (LastResponse != this->ResponseText && !this->ResponseText.empty()) {
             LastResponse = this->ResponseText;
-            scrollY = 0; // Reiniciamos scroll
+            scrollY = 0; //Reset scroll
 
             //Process AI Response
             ProcessAIResponse(this->ResponseText);
