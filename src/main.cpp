@@ -26,6 +26,7 @@ int main(){
     std::ifstream KeyFile("apikey.txt");
     if(KeyFile.is_open()){
         std::getline(KeyFile, API_KEY);
+        AI.SetAPI_Key(API_KEY);
         KeyFile.close();
     }else{
         if(AllocConsole()){

@@ -4,7 +4,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 CURL_LIB_DIR = curl/lib/
 SDL2_LIB_DIR = SDL2-Mingw/x86_64-w64-mingw32/lib/
-MD4C_LIB_DIR = md4c/src/
+MD4C_LIB_DIR = md4c/build/src/
 
 CXXFLAGS = -std=c++17 -Wall -O2
 
@@ -16,7 +16,7 @@ SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 RES_OBJ = $(OBJ_DIR)/resource.o
 
-all: $(COMPILE_MD4C) $(OBJ_DIR) $(EXE) pack_exe
+all: compile_md4c $(OBJ_DIR) $(EXE) pack_exe
 
 $(EXE): $(OBJECTS) $(RES_OBJ)
 	$(CPP) $(OBJECTS) $(RES_OBJ) -o $(EXE) $(LIBS)
@@ -33,10 +33,11 @@ $(RES_OBJ): resource.rc
 $(OBJ_DIR):
 	@mkdir -p $(OBJ_DIR)
 
-$(COMPILE_MD4C):
-	@echo "Compiling md4c..."
-	cmake -G "MinGW Makefiles" md4c
-	cd ..
+compile_md4c:
+	@echo "compiling md4c..."
+	mkdir -p md4c/build
+	cmake -B md4c/build -G "MinGW Makefiles" md4c
+	make -C md4c/build
 
 pack_exe:
 	mkdir -p Ada
