@@ -21,3 +21,4 @@ Para compilar y correr este proyecto desde cero necesitas las siguientes herrami
 * **Librerías Gráficas:** SDL2 (junto a sus módulos de desarrollo para MinGW x86_64).
 * **Librería de Red:** `libcurl` para la gestión de peticiones HTTP POST.
 * **Parser JSON:** `nlohmann/json` (incluido localmente en el header `json.hpp`).
+* **Clonar submódulo md4c:** Para ello ejecuta el comando `git submodule update --init --recursive`
