@@ -281,12 +281,19 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
     SDL_FreeSurface(thinking);
 
+    int mx = 0, my = 0;
+
     while(running){
 
         SDL_Event e;
         while(SDL_PollEvent(&e)){
             if(e.type == SDL_QUIT){
                 running = false;
+            }
+
+            else if (e.type == SDL_MOUSEMOTION) {
+                mx = e.motion.x;
+                my = e.motion.y;
             }
 
             //Scroll
@@ -698,9 +705,6 @@ void GUI::RenderGui(AI_ENGINE &AI){
         SDL_RenderDrawRect(renderer, &UserArea);
 
         //Copy button
-        int mx, my;
-        SDL_GetMouseState(&mx, &my);
-
         if (mx >= CopyButton.x && mx <= (CopyButton.x + CopyButton.w) &&
             my >= CopyButton.y && my <= (CopyButton.y + CopyButton.h)) {
             SDL_SetRenderDrawColor(renderer, 170, 160, 140, 255);
