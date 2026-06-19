@@ -41,6 +41,7 @@ GUI::GUI() : voice(){
     UserTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
     AdaTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
     CopyFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
+    TextVoiceButton_font = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
     
     CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
     CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
@@ -48,6 +49,14 @@ GUI::GUI() : voice(){
     if(CopySurface){
         SDL_FreeSurface(CopySurface);
         CopySurface = nullptr;
+    }
+
+    TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
+    TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
+
+    if(TextVoiceButton_surf){
+        SDL_FreeSurface(TextVoiceButton_surf);
+       TextVoiceButton_surf = nullptr;
     }
 
     r = Reminders();
@@ -253,11 +262,13 @@ void GUI::RenderGui(AI_ENGINE &AI){
     SDL_Rect UserArea = { 140, 630, 1000, 80 };
 
     CopyButton = { 
-    ResponseArea.x + ResponseArea.w - 100, // x = 140 + 1000 - 100 = 1040
-    ResponseArea.y + ResponseArea.h - 45,  // y = 250 + 350 - 45 = 555
+    ResponseArea.x + ResponseArea.w - 100,
+    ResponseArea.y + ResponseArea.h - 45,
     80,
     30
     };
+
+    VoiceButton = { 1150, 650, 100, 40 };
 
     int maxInputWidth = UserArea.w - 40;
 
@@ -319,6 +330,18 @@ void GUI::RenderGui(AI_ENGINE &AI){
                         SDL_SetClipboardText(this->ResponseText.c_str());
                 
                         }
+                    }
+
+                    if(mouseX >= VoiceButton.x && mouseX <= (VoiceButton.x + VoiceButton.w) &&
+                        mouseY >= VoiceButton.y && mouseY <= (VoiceButton.y + VoiceButton.h))
+                    {
+                        if(!VoiceIsActive){
+                            VoiceIsActive = true;
+                        }else{
+                            VoiceIsActive = false;
+                            voice.ShutUpAda();
+                        }
+                            
                     }
                 }
             }
@@ -538,7 +561,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                         si.cb = sizeof(si);
                                         ZeroMemory(&pi, sizeof(pi));
 
-                                        if (CreateProcessA(NULL, lpCommandLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+                                        if (CreateProcessA(NULL, lpCommandLine, NULL, NULL, FALSE, 0, NULL, "C:\\", &si, &pi)) {
                                             CloseHandle(pi.hProcess);
                                             CloseHandle(pi.hThread);
                                         }
@@ -634,9 +657,13 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
                             this->ResponseText = remoteResponse;
 
-                            std::string TalkString = voice.CleanTextForTalk(this->ResponseText);
-                            voice.TalkAda(TalkString);
+                            if(this->VoiceIsActive){
+                                std::string TalkString = voice.CleanTextForTalk(this->ResponseText);
+                                voice.TalkAda(TalkString);
+                            }
+
                         }
+                        
                         this->IsThinking = false;
 
                         ::CoUninitialize();
@@ -670,6 +697,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
         SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
         SDL_RenderDrawRect(renderer, &UserArea);
 
+        //Copy button
         int mx, my;
         SDL_GetMouseState(&mx, &my);
 
@@ -681,19 +709,39 @@ void GUI::RenderGui(AI_ENGINE &AI){
         }
         SDL_RenderFillRect(renderer, &CopyButton);  
 
-        int textW = 0, textH = 0;
-        SDL_QueryTexture(CopyTexture, NULL, NULL, &textW, &textH);
+        int CopyTextW = 0, CopyTextH = 0;
+        SDL_QueryTexture(CopyTexture, NULL, NULL, &CopyTextW, &CopyTextH );
 
-        CopyRect.x = CopyButton.x + (CopyButton.w - textW) / 2;
-        CopyRect.y = CopyButton.y + (CopyButton.h - textH) / 2;
-        CopyRect.w = textW;
-        CopyRect.h = textH;
+        CopyRect.x = CopyButton.x + (CopyButton.w - CopyTextW) / 2;
+        CopyRect.y = CopyButton.y + (CopyButton.h - CopyTextH) / 2;
+        CopyRect.w = CopyTextW;
+        CopyRect.h = CopyTextH;
 
         SDL_RenderCopy(renderer, CopyTexture, NULL, &CopyRect);
 
-        //Copy button
         SDL_SetRenderDrawColor(renderer, 43, 43, 43, 255);
         SDL_RenderDrawRect(renderer, &CopyButton);
+
+        //Voice button
+        if(VoiceIsActive){
+            SDL_SetRenderDrawColor(renderer, 152, 251, 152, 255);
+        }else{
+            SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
+        }
+        SDL_RenderFillRect(renderer, &VoiceButton);
+
+        int TextVoiceButtonW = 0, TextVoiceButtonH = 0;
+        SDL_QueryTexture(TextVoiceButton_tex, NULL, NULL, &TextVoiceButtonW, &TextVoiceButtonH);
+
+        TextVoiceButton.x = VoiceButton.x + (VoiceButton.w - TextVoiceButtonW) / 2;
+        TextVoiceButton.y = VoiceButton.y + (VoiceButton.h - TextVoiceButtonH) / 2;
+        TextVoiceButton.w = TextVoiceButtonW;
+        TextVoiceButton.h = TextVoiceButtonH;
+
+        SDL_RenderCopy(renderer, TextVoiceButton_tex, NULL, &TextVoiceButton);
+
+        SDL_SetRenderDrawColor(renderer, 43, 43, 43, 255);
+        SDL_RenderDrawRect(renderer, &VoiceButton);
 
         // Cut with clip rect (Hides anything that overflows the text box)
         if (!lineTextures.empty()) {
@@ -732,21 +780,47 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
         std::string textBeforeCursor = UserText.substr(0, cursorIndex);
     
-        int w, h;
-        TTF_SizeUTF8(UserTextFont, textBeforeCursor.c_str(), &w, &h);
-        int row = w / maxInputWidth; 
-        int xPos = w % maxInputWidth; 
+        /*AUTOMATIC WRAP FOR TEXT CURSOR*/
+        int padding = 20;
+        int fontHeight = TTF_FontHeight(UserTextFont);
+        int currentLineW = 0;
+        int rows = 0;
 
-        int cursorX = UserArea.x + 20 + xPos;
-        int cursorY = UserArea.y + 20 + (row * TTF_FontHeight(UserTextFont)) - userScrollY;
+        for (size_t i = 0; i < cursorIndex; ) {
+            unsigned char c = (unsigned char)UserText[i];
+            int charLen = 1;
 
+            if (c >= 0xF0) charLen = 4;
+            else if (c >= 0xE0) charLen = 3;
+            else if (c >= 0xC0) charLen = 2;
+            else charLen = 1;
+
+            if (i + charLen > cursorIndex) break;
+
+            std::string sub = UserText.substr(i, charLen);
+            int charW, charH;
+            TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+
+            if (currentLineW + charW > (UserArea.w - 2 * padding)) {
+                rows++;
+                currentLineW = charW;
+            } else {
+                currentLineW += charW;
+            }
+            i += charLen;
+        }
+
+        int cursorX = UserArea.x + padding + currentLineW;
+        int cursorY = UserArea.y + padding + (rows * fontHeight) - userScrollY;
+
+        //Draw cursor
         if ((SDL_GetTicks() / 500) % 2 == 0) {
-            SDL_Rect cursorRect = { cursorX, cursorY, 2, TTF_FontHeight(UserTextFont) };
+            SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
             SDL_RenderFillRect(renderer, &cursorRect);
         }
 
-        //Break the mask
+        // Break the mask
         SDL_RenderSetClipRect(renderer, NULL);
         
         r.CheckReminders();

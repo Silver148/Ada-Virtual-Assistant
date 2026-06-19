@@ -19,6 +19,7 @@ public:
     AdaVoice();
     ~AdaVoice();
     std::string CleanTextForTalk(const std::string& message);
+    void ShutUpAda();
 
 };
 
