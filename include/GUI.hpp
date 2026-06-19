@@ -63,6 +63,12 @@ private:
     SDL_Rect CopyRect;
     SDL_Rect CopyButton;
 
+    TTF_Font* TextVoiceButton_font = nullptr;
+    SDL_Surface* TextVoiceButton_surf = nullptr;
+    SDL_Texture* TextVoiceButton_tex = nullptr;
+    SDL_Rect TextVoiceButton;
+    SDL_Rect VoiceButton;
+
     SDL_Texture* thinking_texture = nullptr;
 
     int scrollY = 0;
@@ -74,6 +80,7 @@ private:
     Reminders r;
     AdaVoice voice;
     bool IsThinking = false;
+    bool VoiceIsActive = false;
 
     size_t cursorIndex = 0;
     

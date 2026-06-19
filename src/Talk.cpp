@@ -36,6 +36,8 @@ void AdaVoice::TalkAda(std::string message) {
 
     if (pVoice == NULL || message.empty()) return;
 
+    pVoice->Resume();
+
     pVoice->Speak(NULL, SPF_PURGEBEFORESPEAK, NULL);
 
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &message[0], (int)message.size(), NULL, 0);
@@ -44,6 +46,11 @@ void AdaVoice::TalkAda(std::string message) {
     MultiByteToWideChar(CP_UTF8, 0, &message[0], (int)message.size(), &wide_text[0], size_needed);
 
     pVoice->Speak(wide_text.c_str(), SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
+}
+
+void AdaVoice::ShutUpAda(){
+    pVoice->Speak(NULL, SPF_PURGEBEFORESPEAK, NULL);
+    pVoice->Pause();
 }
 
 std::string AdaVoice::CleanTextForTalk(const std::string& message) {
