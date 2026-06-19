@@ -41,7 +41,7 @@ Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrout
 
 Para compilar y correr este proyecto desde cero necesitas las siguientes herramientas configuradas en tu entorno (ej. MinGW / MSYS2 en Windows):
 
-* **Compilador:** `g++` con soporte para C++11 o superior.
+* **Compilador:** `g++` con soporte para C++17
 * **Librerías Gráficas:** SDL2 (junto a sus módulos de desarrollo para MinGW x86_64).
 * **Librería de Red:** `libcurl` para la gestión de peticiones HTTP POST.
 * **Parser JSON:** `nlohmann/json` (incluido localmente en el header `json.hpp`).
