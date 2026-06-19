@@ -16,6 +16,27 @@
 
 ---
 
+## Requisito inicial para utlizar a la asistente 
+
+Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrouter.ai). Para obtenerla haz los siguentes pasos:
+
+* Obtener API Key:
+    * Registra/Inicia sesión en [OpenRouter](https://www.openrouter.ai)
+
+    * Crea una API Key presionando "New Key" luego de iniciar sesión/registrarse
+
+    ![OpenRouterStep1](OpenRouterStep.png)
+
+* Configuración inicial en la app
+
+    * Guarda la API Key en un sitio seguro
+
+    * Ingresa la API Key al momento de iniciar la app
+
+    * Diviertete con Ada ;)
+
+---
+
 ## 🛠️ Requisitos de Desarrollo
 
 Para compilar y correr este proyecto desde cero necesitas las siguientes herramientas configuradas en tu entorno (ej. MinGW / MSYS2 en Windows):
