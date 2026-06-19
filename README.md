@@ -31,7 +31,7 @@ Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrout
 
     * Guarda la API Key en un sitio seguro
 
-    * Ingresa la API Key al momento de iniciar la app
+    * Ingresa la API Key al momento de iniciar la app(por primera vez)
 
     * Diviertete con Ada ;)
 
