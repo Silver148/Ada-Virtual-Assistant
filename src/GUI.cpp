@@ -783,34 +783,50 @@ void GUI::RenderGui(AI_ENGINE &AI){
         /*AUTOMATIC WRAP FOR TEXT CURSOR*/
         int padding = 20;
         int fontHeight = TTF_FontHeight(UserTextFont);
+        int maxWidth = UserArea.w - 2 * padding;
         int currentLineW = 0;
         int rows = 0;
 
         for (size_t i = 0; i < cursorIndex; ) {
-            unsigned char c = (unsigned char)UserText[i];
-            int charLen = 1;
 
-            if (c >= 0xF0) charLen = 4;
-            else if (c >= 0xE0) charLen = 3;
-            else if (c >= 0xC0) charLen = 2;
-            else charLen = 1;
-
-            if (i + charLen > cursorIndex) break;
-
-            std::string sub = UserText.substr(i, charLen);
-            int charW, charH;
-            TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
-
-            if (currentLineW + charW > (UserArea.w - 2 * padding)) {
+            if (UserText[i] == '\n') {
                 rows++;
-                currentLineW = charW;
-            } else {
-                currentLineW += charW;
+                currentLineW = 0;
+                i++;
+                continue;
             }
-            i += charLen;
+
+            size_t nextSpace = UserText.find_first_of(" \n", i);
+            size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
+
+            std::string chunk = UserText.substr(i, endOfChunk - i);
+
+            int chunkW, chunkH;
+            TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
+
+            if (currentLineW + chunkW > maxWidth && currentLineW > 0) {
+                rows++;
+                currentLineW = 0;
+            }
+
+            for (size_t j = i; j < endOfChunk; ) {
+                unsigned char c = (unsigned char)UserText[j];
+                int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
+        
+                if (j >= cursorIndex) break;
+
+                std::string sub = UserText.substr(j, charLen);
+                int charW, charH;
+                TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+        
+                currentLineW += charW;
+                j += charLen;
+            }
+    
+            i = endOfChunk;
         }
 
-        int cursorX = UserArea.x + padding + currentLineW;
+        int cursorX = UserArea.x + padding + currentLineW - 2;
         int cursorY = UserArea.y + padding + (rows * fontHeight) - userScrollY;
 
         //Draw cursor
