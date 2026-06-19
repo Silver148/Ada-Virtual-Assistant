@@ -60,6 +60,10 @@ GUI::~GUI() {
         SDL_DestroyTexture(Ada_SpriteSheet_texture);
     }
 
+    if(thinking_texture){
+        SDL_DestroyTexture(thinking_texture);
+    }
+
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     IMG_Quit();
@@ -158,8 +162,9 @@ void GUI::ProcessAIResponse(const std::string& rawText) {
 void GUI::MakeResponseTexture(SDL_Rect ResponseArea) {
 
     for (auto* tex : lineTextures) {
-        if (tex) SDL_DestroyTexture(tex);
+        if (tex && tex != thinking_texture) SDL_DestroyTexture(tex); //Only destroy if tex isn't "thinking_texture" :)
     }
+
     lineTextures.clear();
     lineRects.clear();
 
@@ -240,7 +245,7 @@ void GUI::GestosAda(int id){
     Ada_src_rect.y = row * FRAME_HEIGHT;
 }
 
-void GUI::RenderGui(AI_ENGINE AI){
+void GUI::RenderGui(AI_ENGINE &AI){
     bool running = true;
     bool fullscreen = false;
 
@@ -250,16 +255,20 @@ void GUI::RenderGui(AI_ENGINE AI){
     CopyButton = { 
     ResponseArea.x + ResponseArea.w - 100, // x = 140 + 1000 - 100 = 1040
     ResponseArea.y + ResponseArea.h - 45,  // y = 250 + 350 - 45 = 555
-    80,                                    // Ancho
-    30                                     // Alto
+    80,
+    30
     };
 
-    std::string LastResponse = "";
     int maxInputWidth = UserArea.w - 40;
 
     SDL_RenderSetLogicalSize(renderer, 1280, 720);
 
     SDL_StartTextInput();
+
+    SDL_Surface* thinking = TTF_RenderText_Solid(AdaTextFont, "Pensando...", {0, 0, 0}); //Text for thinking state
+    thinking_texture = SDL_CreateTextureFromSurface(renderer, thinking);
+
+    SDL_FreeSurface(thinking);
 
     while(running){
 
@@ -317,7 +326,8 @@ void GUI::RenderGui(AI_ENGINE AI){
             else if(e.type == SDL_TEXTINPUT){
 
                 if (static_cast<unsigned char>(e.text.text[0]) >= 32) {
-                    UserText += e.text.text;
+                    UserText.insert(cursorIndex, e.text.text);
+                    cursorIndex += strlen(e.text.text);
                 
                     if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
                     if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
@@ -343,27 +353,28 @@ void GUI::RenderGui(AI_ENGINE AI){
             }
 
             else if(e.type == SDL_KEYDOWN){
-                if(e.key.keysym.sym == SDLK_BACKSPACE && !UserText.empty()){
+                if (e.key.keysym.sym == SDLK_BACKSPACE) {
+                    if (cursorIndex > 0 && !UserText.empty()) {
+        
+                    int start_del = cursorIndex - 1;
 
-                    size_t cut_pos = UserText.length() - 1;
-                    while (cut_pos > 0 && 
-                           static_cast<unsigned char>(UserText[cut_pos]) >= 128 && 
-                           static_cast<unsigned char>(UserText[cut_pos]) <= 191) 
-                    {
-                        cut_pos--;
+                    while (start_del > 0 && 
+                        static_cast<unsigned char>(UserText[start_del]) >= 128 && 
+                        static_cast<unsigned char>(UserText[start_del]) <= 191) {
+                        start_del--;
                     }
 
-                    UserText.resize(cut_pos);
+                    UserText.erase(start_del, cursorIndex - start_del);
+        
+                    cursorIndex = start_del;
 
-                    if(!UserText.empty()){
-                        if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                        if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+                    if (!UserText.empty()) {
+                        if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+                        if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
 
                         UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
                         UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
 
-                        UserTextRect.x = UserArea.x + 20;
-                        UserTextRect.y = UserArea.y + 20;
                         UserTextRect.w = UserTextSurface->w;
                         UserTextRect.h = UserTextSurface->h;
 
@@ -375,15 +386,39 @@ void GUI::RenderGui(AI_ENGINE AI){
                             userScrollY = 0;
                         }
                     } else {
-                        if(UserTextTexture != nullptr) {
+                        if (UserTextTexture != nullptr) {
                             SDL_DestroyTexture(UserTextTexture);
                             UserTextTexture = nullptr;
                         }
-                        maxUserScrollY = 0;
-                        userScrollY = 0;
-                    }
+                    maxUserScrollY = 0;
+                    userScrollY = 0;
+                }   
+            }
+        }
 
+            else if (e.key.keysym.sym == SDLK_LEFT) {
+                if (cursorIndex > 0) {
+                    cursorIndex--;
+
+                    while (cursorIndex > 0 && 
+                    (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
+                    static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
+                        cursorIndex--;
+                    }   
                 }
+            }
+
+            else if (e.key.keysym.sym == SDLK_RIGHT) {
+                if (cursorIndex < UserText.length()) {
+                    cursorIndex++;
+                    
+                    while (cursorIndex < UserText.length() && 
+                    (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
+                    static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
+                        cursorIndex++;
+                    }   
+                }
+            }
 
                 else if(e.key.keysym.sym == SDLK_F11){
                     if(!fullscreen){
@@ -396,10 +431,36 @@ void GUI::RenderGui(AI_ENGINE AI){
                     }
                 }
 
-                else if(e.key.keysym.sym == SDLK_RETURN){
+                else if(e.key.keysym.sym == SDLK_RETURN && !UserText.empty()){
 
                     std::string prompt = UserText;
                     UserText = "";
+
+                    /*DESTROY IF LINE TEXTURE HAS TEXT*/
+                    for(SDL_Texture* tex : lineTextures){
+                        if(tex && tex != thinking_texture) {
+                            SDL_DestroyTexture(tex);
+                        }
+                    }
+
+                    lineTextures.clear();
+                    lineRects.clear();
+                    parsedLines.clear();
+
+                    lineTextures.push_back(thinking_texture); //Overwrite
+
+                    SDL_Rect thinkingRect;
+                    thinkingRect.x = ResponseArea.x + 20;
+                    thinkingRect.y = ResponseArea.y + 20;
+
+                    SDL_QueryTexture(thinking_texture, NULL, NULL, &thinkingRect.w, &thinkingRect.h);
+
+                    lineRects.push_back(thinkingRect);
+
+                    IsThinking = true;
+                    
+                    this->ResponseText = "";
+                    this->LastResponse = "";
 
                     if(UserTextTexture != nullptr) {
                         SDL_DestroyTexture(UserTextTexture);
@@ -411,73 +472,65 @@ void GUI::RenderGui(AI_ENGINE AI){
                     }
                     userScrollY = 0;
                     maxUserScrollY = 0;
+                    scrollY = 0;
 
                     std::thread AIThread([&AI, prompt, this](){
 
                         ::CoInitializeEx(NULL, COINIT_MULTITHREADED); //For voice thread
 
-                        this->ResponseText = AI.SendPrompt(prompt);
+                        std::string remoteResponse = AI.SendPrompt(prompt);
 
-                        if(!this->ResponseText.empty()){
+                        if(!remoteResponse.empty()){
 
-                            if(this->ResponseText.rfind("[CMD_SHUTDOWN: TIME=") != std::string::npos){
-
-                                size_t start_lenght = this->ResponseText.rfind("[CMD_SHUTDOWN: TIME=") + 20;
-                                size_t end = this->ResponseText.find("]", start_lenght);
+                            if(remoteResponse.rfind("[CMD_SHUTDOWN: TIME=") != std::string::npos){
+                                size_t start_lenght = remoteResponse.rfind("[CMD_SHUTDOWN: TIME=") + 20;
+                                size_t end = remoteResponse.find("]", start_lenght);
 
                                 if(end != std::string::npos){
                                     size_t length = end - start_lenght;
-                                    std::string time = this->ResponseText.substr(start_lenght, length);
-
+                                    std::string time = remoteResponse.substr(start_lenght, length);
                                     std::string cmd = "shutdown /s /t " + time;
-                                    system(cmd.c_str()); //BYEEEE :D
 
+                                    system(cmd.c_str());
                                 }
                             }
 
-                            if(this->ResponseText.rfind("[CMD_RESTART: TIME=") != std::string::npos){
-
-                                size_t start_length = this->ResponseText.rfind("[CMD_RESTART: TIME=") + 23;
-                                size_t end = this->ResponseText.find("]", start_length);
+                            if(remoteResponse.rfind("[CMD_RESTART: TIME=") != std::string::npos){
+                                size_t start_length = remoteResponse.rfind("[CMD_RESTART: TIME=") + 23;
+                                size_t end = remoteResponse.find("]", start_length);
 
                                 if(end != std::string::npos){
                                     size_t length = end - start_length;
-                                    std::string time = this->ResponseText.substr(start_length, length);
-
+                                    std::string time = remoteResponse.substr(start_length, length);
                                     std::string cmd = "shutdown /r /t " + time;
-                                    system(cmd.c_str()); //RESTART ;)
-
+                                    system(cmd.c_str());
                                 }
                             }
 
-                            size_t cmd_pos = this->ResponseText.rfind("[CMD_EXECUTE: APP_NAME=");
-
+                            size_t cmd_pos = remoteResponse.rfind("[CMD_EXECUTE: APP_NAME=");
                             if(cmd_pos != std::string::npos){
                                 size_t start_length = cmd_pos + 23;
-                                size_t end = this->ResponseText.find("]", start_length);
+                                size_t end = remoteResponse.find("]", start_length);
 
                                 if(end != std::string::npos){
                                     size_t length = end - start_length;
-                                    std::string app_name = this->ResponseText.substr(start_length, length);
+                                    std::string app_name = remoteResponse.substr(start_length, length);
 
                                     if (app_name.find(".exe") != std::string::npos) {
                                         app_name = app_name.substr(0, app_name.find(".exe") + 4);
                                     }
-
-                                    this->ResponseText = this->ResponseText.substr(0, cmd_pos);
+                                    remoteResponse = remoteResponse.substr(0, cmd_pos);
 
                                     std::thread SearchExeThread([app_name]() {
-
                                         SearchExe exe;
+
                                         std::string app_path = exe.FindExe(app_name);
-
                                         std::string formatted_path = "\"" + app_path + "\"";
-
                                         std::vector<char> cmdBuffer(formatted_path.begin(), formatted_path.end());
 
                                         cmdBuffer.push_back('\0');
-
                                         char* lpCommandLine = cmdBuffer.data();
+
                                         STARTUPINFO si;
                                         PROCESS_INFORMATION pi;
 
@@ -485,64 +538,44 @@ void GUI::RenderGui(AI_ENGINE AI){
                                         si.cb = sizeof(si);
                                         ZeroMemory(&pi, sizeof(pi));
 
-                                        BOOL execute = CreateProcessA(
-                                                NULL,
-                                                lpCommandLine,
-                                                NULL,
-                                                NULL,
-                                                FALSE,
-                                                0,
-                                                NULL,
-                                                NULL,
-                                                &si,
-                                                &pi 
-                                            );
-
-                                        if (execute) {
+                                        if (CreateProcessA(NULL, lpCommandLine, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
                                             CloseHandle(pi.hProcess);
                                             CloseHandle(pi.hThread);
                                         }
-                                        
                                     });
-
                                     SearchExeThread.detach();
-
                                 }
                             }
 
-                            if(this->ResponseText.rfind("[REMINDER: NAME=") != std::string::npos){
-                                
-                                size_t start_length = this->ResponseText.rfind("[REMINDER: NAME=") + 16;
-                                size_t end = this->ResponseText.find("]", start_length);
+                            if(remoteResponse.rfind("[REMINDER: NAME=") != std::string::npos){
+                                size_t start_length = remoteResponse.rfind("[REMINDER: NAME=") + 16;
+                                size_t end = remoteResponse.find("]", start_length);
 
                                 if(end != std::string::npos){
-
-                                    size_t when_marker = this->ResponseText.find(", WHEN=", start_length);
-
+                                    size_t when_marker = remoteResponse.find(", WHEN=", start_length);
                                     if (when_marker != std::string::npos && when_marker < end){
                                         size_t name_length = when_marker - start_length;
-                                        std::string name = this->ResponseText.substr(start_length, name_length);
+                                        std::string name = remoteResponse.substr(start_length, name_length);
 
                                         size_t start_when = when_marker + 7; 
                                         size_t when_length = end - start_when;
-                                        std::string when = this->ResponseText.substr(start_when, when_length);
 
+                                        std::string when = remoteResponse.substr(start_when, when_length);
                                         size_t slash_pos = when.find("/");
 
                                         if (slash_pos != std::string::npos) {
                                             std::string when_day = when.substr(0, slash_pos);
-
                                             std::string time_part = when.substr(slash_pos + 1);
 
                                             size_t colon_pos = time_part.find(":");
 
                                             if (colon_pos != std::string::npos) {
                                                 try{
-                                                    std::string str_hora = time_part.substr(0, colon_pos);
+                                                    std::string str_hour = time_part.substr(0, colon_pos);
                                                     std::string string_end = time_part.substr(colon_pos + 1);
 
-                                                    int hora = std::stoi(str_hora);
-                                                    int minuto = std::stoi(string_end.substr(0, 2));
+                                                    int hour = std::stoi(str_hour);
+                                                    int minute = std::stoi(string_end.substr(0, 2));
 
                                                     std::string am_or_pm = "";
                                                     if(string_end.find("PM") != std::string::npos || string_end.find("pm") != std::string::npos){
@@ -550,65 +583,61 @@ void GUI::RenderGui(AI_ENGINE AI){
                                                     }else if(string_end.find("AM") != std::string::npos || string_end.find("am") != std::string::npos){
                                                         am_or_pm = "AM";
                                                     }
-
-                                                    this->r.CreateReminder(name, when_day, hora, minuto, am_or_pm);
-                                                }
-                                                catch(const std::exception& e){
-                                                }
+                                                    this->r.CreateReminder(name, when_day, hour, minute, am_or_pm);
+                                                } catch(...) {}
                                             }
                                         }
                                     }
-
                                 }
                             }
 
-                            if(this->ResponseText.rfind("(alegre)") != std::string::npos){
+                            if(remoteResponse.rfind("(alegre)") != std::string::npos){
                                 this->GestosAda(0);
-                                size_t pos = this->ResponseText.find("(alegre)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.find("(alegre)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            else if(this->ResponseText.rfind("(sorpresa)") != std::string::npos){
+                            else if(remoteResponse.rfind("(sorpresa)") != std::string::npos){
                                 this->GestosAda(1);
-                                size_t pos = this->ResponseText.rfind("(sorpresa)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(sorpresa)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            else if(this->ResponseText.rfind("(tristeza)") != std::string::npos){
+                            else if(remoteResponse.rfind("(tristeza)") != std::string::npos){
                                 this->GestosAda(4);
-                                size_t pos = this->ResponseText.rfind("(tristeza)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(tristeza)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            
-                            else if(this->ResponseText.rfind("(amor)") != std::string::npos){
+                            else if(remoteResponse.rfind("(amor)") != std::string::npos){
                                 this->GestosAda(11);
-                                size_t pos = this->ResponseText.rfind("(amor)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(amor)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            else if(this->ResponseText.rfind("(explicación)") != std::string::npos){
+                            else if(remoteResponse.rfind("(explicación)") != std::string::npos){
                                 this->GestosAda(10);
-                                size_t pos = this->ResponseText.rfind("(explicación)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(explicación)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            else if(this->ResponseText.rfind("(festejando)") != std::string::npos){
+                            else if(remoteResponse.rfind("(festejando)") != std::string::npos){
                                 this->GestosAda(6);
-                                size_t pos = this->ResponseText.rfind("(festejando)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(festejando)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            else if(this->ResponseText.rfind("(preocupación)") != std::string::npos){
+                            else if(remoteResponse.rfind("(preocupación)") != std::string::npos){
                                 this->GestosAda(9);
-                                size_t pos = this->ResponseText.rfind("(preocupación)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(preocupación)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
-                            else if(this->ResponseText.rfind("(tomando en cuenta)") != std::string::npos){
+                            else if(remoteResponse.rfind("(tomando en cuenta)") != std::string::npos){
                                 this->GestosAda(7);
-                                size_t pos = this->ResponseText.rfind("(tomando en cuenta)");
-                                this->ResponseText.erase(pos, this->ResponseText.size() - pos);
+                                size_t pos = remoteResponse.rfind("(tomando en cuenta)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
+
+                            this->ResponseText = remoteResponse;
+
                             std::string TalkString = voice.CleanTextForTalk(this->ResponseText);
                             voice.TalkAda(TalkString);
-
-                            //std::cout << "Ada says: " << this->ResponseText << std::endl;
-                                
                         }
+                        this->IsThinking = false;
 
                         ::CoUninitialize();
                     });
@@ -618,14 +647,14 @@ void GUI::RenderGui(AI_ENGINE AI){
             }
         }
 
-        if (LastResponse != this->ResponseText && !this->ResponseText.empty()) {
+        if (!IsThinking && !this->ResponseText.empty() && LastResponse != this->ResponseText) {
             LastResponse = this->ResponseText;
-            scrollY = 0; //Reset scroll
+            scrollY = 0; // Reset scroll
 
-            //Process AI Response
+            // Process AI Response
             ProcessAIResponse(this->ResponseText);
 
-             //Make response texture
+            // Make response texture
             MakeResponseTexture(ResponseArea);
         }
 
@@ -684,20 +713,42 @@ void GUI::RenderGui(AI_ENGINE AI){
             SDL_RenderSetClipRect(renderer, NULL);
         }
 
+        /*CODE FOR USER AREA AND TEXT CURSOR ;)*/
+        SDL_Rect userClipRegion = { UserArea.x + 10, UserArea.y + 10, UserArea.w - 20, UserArea.h - 20 };
+        SDL_RenderSetClipRect(renderer, &userClipRegion);
+        
         if(!UserText.empty() && UserTextTexture != nullptr) {
-            //Make a mask
-            SDL_Rect userClipRegion = { UserArea.x + 10, UserArea.y + 10, UserArea.w - 20, UserArea.h - 20 };
-            SDL_RenderSetClipRect(renderer, &userClipRegion);
 
             SDL_Rect currentMinInputRect = UserTextRect;
-            currentMinInputRect.y -= userScrollY; //dinamic scroll
+            currentMinInputRect.y -= userScrollY; //Dynamic scroll
 
             SDL_RenderCopy(renderer, UserTextTexture, NULL, &currentMinInputRect);
 
-            //Break the mask
-            SDL_RenderSetClipRect(renderer, NULL);
         }
 
+        if (cursorIndex > UserText.length()) {
+            cursorIndex = UserText.length();
+        }
+
+        std::string textBeforeCursor = UserText.substr(0, cursorIndex);
+    
+        int w, h;
+        TTF_SizeUTF8(UserTextFont, textBeforeCursor.c_str(), &w, &h);
+        int row = w / maxInputWidth; 
+        int xPos = w % maxInputWidth; 
+
+        int cursorX = UserArea.x + 20 + xPos;
+        int cursorY = UserArea.y + 20 + (row * TTF_FontHeight(UserTextFont)) - userScrollY;
+
+        if ((SDL_GetTicks() / 500) % 2 == 0) {
+            SDL_Rect cursorRect = { cursorX, cursorY, 2, TTF_FontHeight(UserTextFont) };
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+            SDL_RenderFillRect(renderer, &cursorRect);
+        }
+
+        //Break the mask
+        SDL_RenderSetClipRect(renderer, NULL);
+        
         r.CheckReminders();
 
         SDL_RenderPresent(renderer);

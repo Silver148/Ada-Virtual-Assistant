@@ -43,6 +43,7 @@ private:
 
     std::string UserText;
     std::string ResponseText;
+    std::string LastResponse;
 
     TTF_Font* UserTextFont = nullptr;
     SDL_Surface* UserTextSurface = nullptr;
@@ -52,8 +53,8 @@ private:
     TTF_Font* AdaTextFont = nullptr;
     SDL_Surface* AdaTextSurface = nullptr;
     std::vector<RenderLine> parsedLines;
-    std::vector<SDL_Texture*> lineTextures; // Guardaremos las texturas ya renderizadas por línea
-    std::vector<SDL_Rect> lineRects;        // Y sus posiciones en pantalla
+    std::vector<SDL_Texture*> lineTextures;
+    std::vector<SDL_Rect> lineRects;
     SDL_Rect AdaTextRect;
 
     TTF_Font* CopyFont = nullptr;
@@ -61,6 +62,8 @@ private:
     SDL_Texture* CopyTexture = nullptr;
     SDL_Rect CopyRect;
     SDL_Rect CopyButton;
+
+    SDL_Texture* thinking_texture = nullptr;
 
     int scrollY = 0;
     int maxScrollY = 0;
@@ -70,13 +73,16 @@ private:
 
     Reminders r;
     AdaVoice voice;
+    bool IsThinking = false;
+
+    size_t cursorIndex = 0;
     
 public:
 
     GUI();
     ~GUI();
 
-    void RenderGui(AI_ENGINE AI);
+    void RenderGui(AI_ENGINE &AI);
     void GestosAda(int id);
 
     void ProcessAIResponse(const std::string& rawText);

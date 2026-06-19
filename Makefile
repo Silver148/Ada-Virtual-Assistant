@@ -49,8 +49,7 @@ pack_exe:
 
 clean:
 	@rm -rf $(OBJ_DIR) $(EXE)
-	@rm -rf $(MD4C_LIB_DIR)/src *.a
-	@rm -rf $(MD4C_LIB_DIR)/CMakeFiles
+	@rm -rf md4c/build
 	@rm -rf Ada
 	@echo "Cleaned!"
 
