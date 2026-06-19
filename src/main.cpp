@@ -21,7 +21,6 @@ std::string API_KEY = "";
 
 int main(){
     AI_ENGINE AI = AI_ENGINE();
-    GUI gui = GUI();
 
     std::ifstream KeyFile("apikey.txt");
     if(KeyFile.is_open()){
@@ -38,13 +37,17 @@ int main(){
             SetConsoleTitleA("Set API KEY");
 
             std::cout << "Please, enter the OpenRouter API Key: ";
-            std::cin >> API_KEY;
 
-            AI.SetAPI_Key(API_KEY);
+            if(!(std::cin >> API_KEY)){
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            }else{
+                AI.SetAPI_Key(API_KEY);
         
-            std::ofstream KeyFile("apikey.txt");
-            KeyFile << API_KEY;
-            KeyFile.close();
+                std::ofstream KeyFile("apikey.txt");
+                KeyFile << API_KEY;
+                KeyFile.close();
+            }
 
             if (fpOut) fclose(fpOut);
             if (fpIn)  fclose(fpIn);
@@ -52,9 +55,11 @@ int main(){
             freopen_s(&fpOut, "NUL", "w", stdout);
             freopen_s(&fpIn, "NUL", "r", stdin);
 
-            FreeConsole();
+            FreeConsole(); 
         }
     }
+
+    GUI gui = GUI();
 
     AI.SetSystemPrompt(
     "# IDENTIDAD Y ORIGEN\n"
