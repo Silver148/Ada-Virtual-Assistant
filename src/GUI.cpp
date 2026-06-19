@@ -783,62 +783,82 @@ void GUI::RenderGui(AI_ENGINE &AI){
         }
 
         std::string textBeforeCursor = UserText.substr(0, cursorIndex);
-    
-        /*AUTOMATIC WRAP FOR TEXT CURSOR*/
+
+        /* AUTOMATIC WRAP FOR TEXT CURSOR*/
         int padding = 20;
         int fontHeight = TTF_FontHeight(UserTextFont);
+        int lineHeight = TTF_FontLineSkip(UserTextFont);
         int maxWidth = UserArea.w - 2 * padding;
         int currentLineW = 0;
         int rows = 0;
+        size_t lineStartIndex = 0;
+        int simulatedW = 0;
 
+        // Iterate through the text until the cursor position
         for (size_t i = 0; i < cursorIndex; ) {
-
+            // 1. Manual Line Break
             if (UserText[i] == '\n') {
                 rows++;
-                currentLineW = 0;
                 i++;
+                lineStartIndex = i; // Reset start of line to after the newline
+                simulatedW = 0;
                 continue;
             }
 
+            // 2. Identify word/chunk
             size_t nextSpace = UserText.find_first_of(" \n", i);
             size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
+            
+            // Do not include \n in the chunk measurement
+            if (nextSpace != std::string::npos && nextSpace < cursorIndex && UserText[nextSpace] == '\n') {
+                endOfChunk = nextSpace;
+            }
 
             std::string chunk = UserText.substr(i, endOfChunk - i);
-
             int chunkW, chunkH;
             TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
 
+            // 3. Logic to wrap (standard chunk)
+            if (simulatedW + chunkW > maxWidth && simulatedW > 0) {
+                rows++;
+                lineStartIndex = i; // New line starts here
+                simulatedW = 0;
+            }
+
+            // 4. Logic for "Big Word" (char-by-char)
             if (chunkW > maxWidth) {
                 for (size_t j = i; j < endOfChunk; ) {
                     unsigned char c = (unsigned char)UserText[j];
                     int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
-                    
                     if (j >= cursorIndex) break;
 
                     std::string sub = UserText.substr(j, charLen);
                     int charW, charH;
                     TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
-                    
-                    if (currentLineW + charW > maxWidth) {
+
+                    // Wrap if char exceeds width
+                    if (simulatedW + charW > maxWidth && simulatedW > 0) {
                         rows++;
-                        currentLineW = 0;
+                        lineStartIndex = j; // Update line start to this character
+                        simulatedW = 0;
                     }
-                    currentLineW += charW;
+                    simulatedW += charW;
                     j += charLen;
                 }
             } else {
-                if (currentLineW + chunkW > maxWidth && currentLineW > 0) {
-                    rows++;
-                    currentLineW = 0;
-                }
-                currentLineW += chunkW;
+                simulatedW += chunkW;
             }
-
             i = endOfChunk;
         }
 
+        // Calculate the exact width of the final segment for cursor X
+        std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
+        int dummyH;
+        TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+
+        // Cursor coordinates
         int cursorX = UserArea.x + padding + currentLineW - 2;
-        int cursorY = UserArea.y + padding + (rows * fontHeight) - userScrollY;
+        int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
 
         //Draw cursor
         if ((SDL_GetTicks() / 500) % 2 == 0) {
