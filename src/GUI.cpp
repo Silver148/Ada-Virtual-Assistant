@@ -808,25 +808,32 @@ void GUI::RenderGui(AI_ENGINE &AI){
             int chunkW, chunkH;
             TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
 
-            if (currentLineW + chunkW > maxWidth && currentLineW > 0) {
-                rows++;
-                currentLineW = 0;
+            if (chunkW > maxWidth) {
+                for (size_t j = i; j < endOfChunk; ) {
+                    unsigned char c = (unsigned char)UserText[j];
+                    int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
+                    
+                    if (j >= cursorIndex) break;
+
+                    std::string sub = UserText.substr(j, charLen);
+                    int charW, charH;
+                    TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+                    
+                    if (currentLineW + charW > maxWidth) {
+                        rows++;
+                        currentLineW = 0;
+                    }
+                    currentLineW += charW;
+                    j += charLen;
+                }
+            } else {
+                if (currentLineW + chunkW > maxWidth && currentLineW > 0) {
+                    rows++;
+                    currentLineW = 0;
+                }
+                currentLineW += chunkW;
             }
 
-            for (size_t j = i; j < endOfChunk; ) {
-                unsigned char c = (unsigned char)UserText[j];
-                int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
-        
-                if (j >= cursorIndex) break;
-
-                std::string sub = UserText.substr(j, charLen);
-                int charW, charH;
-                TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
-        
-                currentLineW += charW;
-                j += charLen;
-            }
-    
             i = endOfChunk;
         }
 
