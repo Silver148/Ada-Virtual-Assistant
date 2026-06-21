@@ -44,7 +44,7 @@ void AI_ENGINE::SaveMemories(const std::string &file){
 }
 
 AI_ENGINE::AI_ENGINE(){
-    AI_config["model"] = "openrouter/free";
+    AI_config["model"] = "openai/gpt-oss-120b:free";
     AI_config["max_tokens"] = 2048;
     AI_config["stream"] = false;
 
