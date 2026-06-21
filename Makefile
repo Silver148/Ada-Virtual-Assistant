@@ -1,5 +1,5 @@
 EXE = Ada.exe
-CPP = g++
+CPP = x86_64-w64-mingw32-g++
 SRC_DIR = src
 OBJ_DIR = obj
 CURL_LIB_DIR = curl/lib/
