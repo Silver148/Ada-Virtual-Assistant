@@ -44,7 +44,7 @@ void AI_ENGINE::SaveMemories(const std::string &file){
 }
 
 AI_ENGINE::AI_ENGINE(){
-    AI_config["model"] = "openrouter/auto";
+    AI_config["model"] = "openrouter/free";
     AI_config["max_tokens"] = 3072;
     AI_config["stream"] = false;
 
