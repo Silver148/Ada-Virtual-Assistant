@@ -61,7 +61,7 @@ void AI_ENGINE::SetSystemPrompt(const std::string &system_prompt){
 
 std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
 
-        while (memories.size() > 14) {
+        while (memories.size() > 30) {
             memories.erase(memories.begin());
         }
 
