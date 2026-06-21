@@ -44,8 +44,8 @@ void AI_ENGINE::SaveMemories(const std::string &file){
 }
 
 AI_ENGINE::AI_ENGINE(){
-    AI_config["model"] = "meta-llama/llama-3.3-70b-instruct:free";
-    AI_config["max_tokens"] = 3072;
+    AI_config["model"] = "openrouter/free";
+    AI_config["max_tokens"] = 2048;
     AI_config["stream"] = false;
 
     LoadMemories("memories.json");
