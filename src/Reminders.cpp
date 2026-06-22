@@ -28,6 +28,29 @@ void Reminders::ShowNotification(const char* title, const char* message){
     strncpy(nid.szTip, "Ada", sizeof(nid.szTip) - 1);
 
     Shell_NotifyIcon(NIM_ADD, &nid);
+#else
+    // Versión para Linux
+    static bool initialized = false;
+    if (!initialized) {
+        notify_init("Ada");
+        initialized = true;
+    }
+
+    NotifyNotification* n = notify_notification_new(title, message, "dialog-information");
+    
+    notify_notification_set_urgency(n, NOTIFY_URGENCY_CRITICAL);
+
+    if (!notify_notification_show(n, NULL)) {
+        std::cerr << "Failed to show notification" << std::endl;
+    }
+
+    notify_notification_set_timeout(n, 0);
+
+    if (notify_notification_show(n, NULL)) {
+        usleep(100000);
+    }
+    
+    g_object_unref(G_OBJECT(n));
 #endif
 }
 

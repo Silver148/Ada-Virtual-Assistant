@@ -5,11 +5,14 @@ GUI.cpp
 */
 
 #include "GUI.hpp"
-#include "SearchEXE.hpp"
-#include <windows.h>
+#if defined(_WIN32) || defined(_WIN64)
+    #include "SearchEXE.hpp"
+    #include <windows.h>
+#endif
 #define FRAME_WIDTH 205
 #define FRAME_HEIGHT 200
 
+#if defined(_WIN32) || defined(_WIN64)
 GUI::GUI() : voice(){
     SDL_Init(SDL_INIT_VIDEO);
     IMG_Init(IMG_INIT_PNG);
@@ -62,6 +65,59 @@ GUI::GUI() : voice(){
     r = Reminders();
     r.LoadReminders();
 }
+#else
+GUI::GUI() : audioEngine(), voice(audioEngine.dev) {
+    IMG_Init(IMG_INIT_PNG);
+    TTF_Init();
+
+    window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    Ada_SpriteSheet_surface = IMG_Load("Ada_SpriteSheet.png");
+
+    Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
+
+    if(Ada_SpriteSheet_surface){
+        SDL_FreeSurface(Ada_SpriteSheet_surface);
+        Ada_SpriteSheet_surface = nullptr;
+    }
+        
+    Ada_src_rect.x = 0;
+    Ada_src_rect.y = 0;
+    Ada_src_rect.w = FRAME_WIDTH;
+    Ada_src_rect.h = FRAME_HEIGHT;
+
+    Ada_dest_rect.x = 1280 / 2 - FRAME_WIDTH / 2;
+    Ada_dest_rect.y = 0;
+    Ada_dest_rect.w = FRAME_WIDTH;
+    Ada_dest_rect.h = FRAME_HEIGHT;
+
+    UserTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
+    AdaTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
+    CopyFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
+    TextVoiceButton_font = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
+    
+    CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
+    CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
+
+    if(CopySurface){
+        SDL_FreeSurface(CopySurface);
+        CopySurface = nullptr;
+    }
+
+    TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
+    TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
+
+    if(TextVoiceButton_surf){
+        SDL_FreeSurface(TextVoiceButton_surf);
+       TextVoiceButton_surf = nullptr;
+    }
+
+    r = Reminders();
+    r.LoadReminders();
+}
+#endif
 
 GUI::~GUI() {
 
@@ -505,8 +561,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
                     scrollY = 0;
 
                     std::thread AIThread([&AI, prompt, this](){
-
+                        #if defined(_WIN32) || defined(_WIN64)
                         ::CoInitializeEx(NULL, COINIT_MULTITHREADED); //For voice thread
+                        #endif
 
                         std::string remoteResponse = AI.SendPrompt(prompt);
 
@@ -519,33 +576,49 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                 if(end != std::string::npos){
                                     size_t length = end - start_lenght;
                                     std::string time = remoteResponse.substr(start_lenght, length);
+                                #if defined(_WIN32) || defined(_WIN64)
                                     std::string cmd = "shutdown /s /t " + time;
-
                                     system(cmd.c_str());
+                                #else
+                                    std::thread([time](){
+                                        std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
+
+                                        system("sudo /usr/sbin/shutdown -h now");
+                                    }).detach();
+                                #endif
+
                                 }
                             }
 
                             if(remoteResponse.rfind("[CMD_RESTART: TIME=") != std::string::npos){
-                                size_t start_length = remoteResponse.rfind("[CMD_RESTART: TIME=") + 23;
-                                size_t end = remoteResponse.find("]", start_length);
+                                size_t start_lenght = remoteResponse.rfind("[CMD_RESTART: TIME=") + 23;
+                                size_t end = remoteResponse.find("]", start_lenght);
 
                                 if(end != std::string::npos){
-                                    size_t length = end - start_length;
-                                    std::string time = remoteResponse.substr(start_length, length);
+                                    size_t length = end - start_lenght;
+                                    std::string time = remoteResponse.substr(start_lenght, length);
+                                #if defined(_WIN32) || defined(_WIN64)
                                     std::string cmd = "shutdown /r /t " + time;
                                     system(cmd.c_str());
+                                #else
+                                    std::thread([time](){
+                                        std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
+                                        system("sudo /usr/sbin/shutdown -r now");
+                                    }).detach();
+                                #endif
                                 }
                             }
 
                             size_t cmd_pos = remoteResponse.rfind("[CMD_EXECUTE: APP_NAME=");
                             if(cmd_pos != std::string::npos){
-                                size_t start_length = cmd_pos + 23;
-                                size_t end = remoteResponse.find("]", start_length);
+                                size_t start_lenght = cmd_pos + 23;
+                                size_t end = remoteResponse.find("]", start_lenght);
 
                                 if(end != std::string::npos){
-                                    size_t length = end - start_length;
-                                    std::string app_name = remoteResponse.substr(start_length, length);
-
+                                
+                                    size_t length = end - start_lenght;
+                                    std::string app_name = remoteResponse.substr(start_lenght, length);
+                                #if defined(_WIN32) || defined(_WIN64)
                                     if (app_name.find(".exe") != std::string::npos) {
                                         app_name = app_name.substr(0, app_name.find(".exe") + 4);
                                     }
@@ -573,24 +646,52 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                             CloseHandle(pi.hThread);
                                         }
                                     });
+
                                     SearchExeThread.detach();
+                                #else
+                                    remoteResponse = remoteResponse.substr(0, cmd_pos);
+                                    
+                                    signal(SIGCHLD, SIG_IGN);
+
+                                    pid_t pid = fork();
+
+                                    if(pid == 0){
+                                        const char* home_dir = getenv("HOME");
+                                        
+                                        if(home_dir != nullptr){
+                                            if(chdir(home_dir) != 0){
+                                                perror("Failed to change directory");
+                                            }
+                                        }
+
+                                        setsid();
+
+                                        char* args[] = {const_cast<char*>(app_name.c_str()), NULL};
+                                        execvp(args[0], args);
+
+                                        exit(1);
+                                    }else{
+                                        perror("Failed to fork process for executing application");
+                                    }
+                                #endif
+
                                 }
                             }
 
                             if(remoteResponse.rfind("[REMINDER: NAME=") != std::string::npos){
-                                size_t start_length = remoteResponse.rfind("[REMINDER: NAME=") + 16;
-                                size_t end = remoteResponse.find("]", start_length);
+                                size_t start_lenght = remoteResponse.rfind("[REMINDER: NAME=") + 16;
+                                size_t end = remoteResponse.find("]", start_lenght);
 
                                 if(end != std::string::npos){
-                                    size_t when_marker = remoteResponse.find(", WHEN=", start_length);
+                                    size_t when_marker = remoteResponse.find(", WHEN=", start_lenght);
                                     if (when_marker != std::string::npos && when_marker < end){
-                                        size_t name_length = when_marker - start_length;
-                                        std::string name = remoteResponse.substr(start_length, name_length);
+                                        size_t name_lenght = when_marker - start_lenght;
+                                        std::string name = remoteResponse.substr(start_lenght, name_lenght);
 
                                         size_t start_when = when_marker + 7; 
-                                        size_t when_length = end - start_when;
+                                        size_t when_lenght = end - start_when;
 
-                                        std::string when = remoteResponse.substr(start_when, when_length);
+                                        std::string when = remoteResponse.substr(start_when, when_lenght);
                                         size_t slash_pos = when.find("/");
 
                                         if (slash_pos != std::string::npos) {
@@ -673,7 +774,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
                         
                         this->IsThinking = false;
 
+                        #if defined(_WIN32) || defined(_WIN64)
                         ::CoUninitialize();
+                        #endif
                     });
 
                     AIThread.detach();

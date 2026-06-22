@@ -120,7 +120,7 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
             } else {
                 try {
                     response = json::parse(result);
-                    std::cout << response << std::endl;
+                    //std::cout << response << std::endl;
 
                     if (response.contains("choices") && !response["choices"].empty()) {
             

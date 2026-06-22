@@ -9,8 +9,15 @@
 #include <iomanip>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
-#include <windows.h>
-#include <shellapi.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+    #include <shellapi.h>
+#else
+    extern "C" {
+        #include <libnotify/notify.h>
+    }
+#endif
 #include "json.hpp"
 
 using json = nlohmann::json;
