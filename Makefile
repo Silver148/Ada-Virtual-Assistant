@@ -8,7 +8,7 @@ ifeq ($(CROSS), 1)
     CPP = x86_64-w64-mingw32-g++
     CC  = x86_64-w64-mingw32-gcc
     WINDRES = x86_64-w64-mingw32-windres
-    SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
+    SOURCES = $(filter-out $(SRC_DIR)/Audio_Engine.cpp, $(wildcard $(SRC_DIR)/*.cpp))
     RES_OBJ = $(OBJ_DIR)/resource.o
 else
     EXE = Ada
