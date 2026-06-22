@@ -60,4 +60,11 @@ Para iniciar los submodulos(en este caso md4c), ejecuta en la terminal:
  git submodule update --init --recursive
  ```
 
+### 📥 Nota sobre los modelos de IA
+
+Este proyecto utiliza Git LFS para los modelos de voz. Si al clonar el repositorio el modelo no aparece en `bin/piper/`, ejecuta este comando para descargarlo:
+ ```bash
+ git lfs pull
+ ```
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
