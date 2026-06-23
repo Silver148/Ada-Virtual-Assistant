@@ -11,7 +11,9 @@
 #include "Reminders.hpp"
 #include "Talk.hpp"
 #include "AI_Engine.hpp"
+#if defined(__linux__) || defined(__unix__)
 #include "Audio_Engine.hpp"
+#endif
 
 enum LineType {
     LINE_NORMAL,
@@ -79,7 +81,9 @@ private:
     int maxUserScrollY = 0;
 
     Reminders r;
+#if defined(__linux__ ) || defined(__unix___)
     AudioEngine audioEngine;
+#endif
     AdaVoice voice;
 
     bool IsThinking = false;
