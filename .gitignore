@@ -1,5 +1,8 @@
-Ada_packed
+Ada_packed/
+ada_deb/
 Ada
 obj
 Ada.exe
 *.zip
+*.tar.gz
+*.deb

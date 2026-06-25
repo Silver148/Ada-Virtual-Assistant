@@ -114,7 +114,7 @@ void Reminders::CreateReminder(std::string name, std::string when_day, int hour,
 
     J_reminders.push_back(newReminder);
 
-    std::ofstream file("reminders.json");
+    std::ofstream file(get_config_path() + "/reminders.json");
 
     if (file.is_open()) {
         file << J_reminders.dump(4);
@@ -134,7 +134,7 @@ void Reminders::CheckReminders(){
 
             it = J_reminders.erase(it); //Delete old reminder
 
-            std::ofstream file("reminders.json"); //Save changes
+            std::ofstream file(get_config_path() + "/reminders.json"); //Save changes
 
             if (file.is_open()) {
                 file << J_reminders.dump(4);
@@ -149,7 +149,7 @@ void Reminders::CheckReminders(){
 
 void Reminders::LoadReminders(){
 
-    std::ifstream file("reminders.json");
+    std::ifstream file(get_config_path() + "/reminders.json");
 
     if(file.is_open()){
         try{

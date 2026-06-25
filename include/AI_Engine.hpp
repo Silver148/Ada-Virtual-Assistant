@@ -2,6 +2,9 @@
 #define AI_ENGINE_HPP
 #include <string>
 #include "json.hpp"
+#if defined(__linux__) || (__unix__)
+#include "main.hpp"
+#endif
 
 using json = nlohmann::json;
 

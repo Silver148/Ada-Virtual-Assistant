@@ -18,6 +18,7 @@ main.c
 #include <unistd.h>
 #include <sys/resource.h>
 #include <sys/syscall.h>
+#include "main.hpp"
 #endif
 #include "AI_Engine.hpp"
 #include "GUI.hpp"
@@ -25,6 +26,19 @@ main.c
 #undef main
 
 std::string API_KEY = "";
+
+std::string get_config_path() {
+    const char* home_dir = std::getenv("HOME");
+    if (!home_dir) return "";
+
+    fs::path config_path = fs::path(home_dir) / ".config" / "ada";
+
+    if (!fs::exists(config_path)) {
+        fs::create_directories(config_path);
+    }
+
+    return config_path.string();
+}
 
 int main(){
 
@@ -42,7 +56,13 @@ int main(){
 
     AI_ENGINE AI = AI_ENGINE();
 
-    std::ifstream KeyFile("apikey.txt");
+    #if defined(_WIN32) || defined(_WIN64)
+    std::string path = "api_key.txt";
+    #else
+    std::string path = get_config_path() + "/api_key.txt";
+    #endif
+
+    std::ifstream KeyFile(path);
     if(KeyFile.is_open()){
         std::getline(KeyFile, API_KEY);
         AI.SetAPI_Key(API_KEY);
@@ -65,7 +85,7 @@ int main(){
             }else{
                 AI.SetAPI_Key(API_KEY);
         
-                std::ofstream KeyFile("apikey.txt");
+                std::ofstream KeyFile(path);
                 KeyFile << API_KEY;
                 KeyFile.close();
             }
@@ -91,7 +111,7 @@ int main(){
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }else{
             AI.SetAPI_Key(API_KEY);
-            std::ofstream OutFile("apikey.txt");
+            std::ofstream OutFile(path);
             OutFile << API_KEY;
             OutFile.close();
         }

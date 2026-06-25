@@ -48,7 +48,7 @@ AI_ENGINE::AI_ENGINE(){
     AI_config["max_tokens"] = 2048;
     AI_config["stream"] = false;
 
-    LoadMemories("memories.json");
+    LoadMemories(get_config_path() + "/memories.json");
 }
 
 void AI_ENGINE::SetAPI_Key(const std::string &API_Key){
@@ -129,7 +129,7 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
                         memories.push_back({{"role", "user"}, {"content", Prompt}});
                         memories.push_back({{"role", "assistant"}, {"content", ada_reply}});
 
-                        SaveMemories("memories.json");
+                        SaveMemories(get_config_path() + "/memories.json");
 
                         final_reply = ada_reply;
 

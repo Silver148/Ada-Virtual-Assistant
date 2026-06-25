@@ -1,3 +1,4 @@
+VERSION = 1.3.1
 CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
@@ -92,12 +93,30 @@ else
 	ln -s libmd4c.so Ada_packed/libmd4c.so.0
 	cp -rf bin Ada_packed/bin
 	sudo setcap cap_sys_nice=eip ./Ada_packed/$(EXE)
+	tar -czvf Ada-$(VERSION).tar.gz -C Ada_packed .
 endif
+
+make_debian_package:
+	mkdir -p ada_deb/opt/ada/
+	mkdir -p ada_deb/DEBIAN
+	cp -r Ada_packed/* ada_deb/opt/ada/
+
+	@printf '#!/bin/bash\nset -e\n\n# 1. Create the symbolic link\nln -sf /opt/ada/Ada /usr/local/bin/ada\n\n# 2. Attempt setcap\nsetcap cap_sys_nice=eip /opt/ada/Ada 2>/dev/null || echo "Note: Could not apply setcap, using standard permissions."\n\nexit 0' > ada_deb/DEBIAN/postinst
+	@chmod 755 ada_deb/DEBIAN/postinst
+
+	@printf "Package: ada-assistant\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: amd64\nDepends: libcurl4, libsdl2-2.0-0\nMaintainer: Juan Yaguaro (aka silverhacker)\nDescription: AI-powered virtual assistant.\n" > ada_deb/DEBIAN/control
+
+	dpkg-deb --root-owner-group --build ada_deb ada-assistant_$(VERSION)_amd64.deb
+
+	rm -rf ada_deb
+	@echo "Debian Package successfully created: ada-assistant_$(VERSION)_amd64.deb"
 
 clean:
 	@rm -rf $(OBJ_DIR) $(EXE) *.exe
 	@rm -rf md4c/build
 	@rm -rf Ada_packed
+	@rm -f *.deb
+	@rm -f *.tar.gz
 	@echo "Cleaned!"
 
 .PHONY: all clean compile_md4c pack_exe
