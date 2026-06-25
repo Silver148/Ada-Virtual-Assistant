@@ -2,6 +2,12 @@ CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
 
+ifeq ($(SYSTEM), Windows_NT)
+	CROSS = 1
+else
+	CROSS = 0
+endif
+
 ifeq ($(CROSS), 1)
     EXE = Ada.exe
     SYSTEM = Windows (MinGW)
@@ -85,6 +91,7 @@ else
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
 	ln -s libmd4c.so Ada_packed/libmd4c.so.0
 	cp -rf bin Ada_packed/bin
+	sudo setcap cap_sys_nice=eip ./Ada_packed/$(EXE)
 endif
 
 clean:

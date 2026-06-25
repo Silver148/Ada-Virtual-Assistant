@@ -14,8 +14,11 @@ main.c
     #include <windows.h>
 #endif
 #include <thread>
+#if defined(__linux__) || defined(__unix__)
 #include <unistd.h>
-#include <unistd.h>
+#include <sys/resource.h>
+#include <sys/syscall.h>
+#endif
 #include "AI_Engine.hpp"
 #include "GUI.hpp"
 
@@ -24,6 +27,19 @@ main.c
 std::string API_KEY = "";
 
 int main(){
+
+    if (setpriority(PRIO_PROCESS, 0, -10) == 0) {
+        std::cout << "Priority set to high successfully." << std::endl;
+    }else{
+        std::cerr << "Failed to set priority: " << strerror(errno) << std::endl;
+    }
+
+    int ioprio_set = syscall(SYS_ioprio_set, 1, 0, 4 | (2 << 13));
+
+    if (ioprio_set == 0) {
+        std::cout << "I/O priority set succesfully." << std::endl;
+    }
+
     AI_ENGINE AI = AI_ENGINE();
 
     std::ifstream KeyFile("apikey.txt");

@@ -7,10 +7,14 @@ Talk.cpp
 #include "Talk.hpp"
 
 #if defined(__linux__) || defined(__unix__)
-PiperBridge::PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev) {
+
+bool PiperBridge::StartPiper() {
     int textPipe[2], audioPipe[2];
-    pipe(textPipe);
-    pipe(audioPipe);
+    
+    if (pipe(textPipe) == -1 || pipe(audioPipe) == -1) {
+        perror("Error creating pipes");
+        return false;
+    }
 
     piperProcessId = fork();
 
@@ -21,10 +25,18 @@ PiperBridge::PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev) {
         close(textPipe[0]); close(textPipe[1]);
         close(audioPipe[0]); close(audioPipe[1]);
 
-        execl("./bin/piper/piper", "piper", "--model", modelPath.c_str(), "--output-raw", 
-        "--length-scale", "0.8", NULL);
+        //Best parameters for es_AR-daniela-high.onnx
+        execl("/usr/bin/taskset", "taskset", "-c", "0,1", "./bin/piper/piper",
+            "--model", modelPath.c_str(),
+            "--output-raw",
+            "--length-scale", "1.0", 
+            "--threads", "2", 
+            "--noise-scale", "0.0",
+            "--noise-w", "0.0",
+            "--sdp-ratio", "1.5",
+            NULL);
         exit(1);
-    } else {
+    } else if (piperProcessId > 0) {
         close(textPipe[0]); 
         close(audioPipe[1]);
         writePipe[1] = textPipe[1];
@@ -32,49 +44,89 @@ PiperBridge::PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev) {
 
         std::thread audioThread(&PiperBridge::StreamAudio, this, dev);
 
-        //Set higher priority for audio thread
         pthread_t handle = audioThread.native_handle();
-        int policy = SCHED_FIFO;
         struct sched_param param;
-        param.sched_priority = 10;
-        pthread_setschedparam(handle, policy, &param);
+        param.sched_priority = 99;
+
+        pthread_setschedparam(handle, SCHED_FIFO, &param);
 
         audioThread.detach();
+        return true;
+    } else {
+        perror("Error in fork");
+        return false;
+    }
+}
+
+PiperBridge::PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev) {
+    this->modelPath = modelPath;
+    this->dev = dev;
+    this->isRunning = true;
+    
+    if (!StartPiper()) {
+        fprintf(stderr, "Could not initialize piper\n");
     }
 }
 
 void PiperBridge::StreamAudio(SDL_AudioDeviceID dev) {
     char buffer[2048];
-    
-    while(1){
+    while(true) {
+
         ssize_t bytes = read(readPipe, buffer, sizeof(buffer));
         if(bytes > 0){
-            SDL_QueueAudio(dev, buffer, bytes);
-        }else if(bytes == 0)
-            break;
+            if(isRunning.load()){
+                SDL_LockAudioDevice(dev);
+                SDL_QueueAudio(dev, buffer, bytes);
+                SDL_UnlockAudioDevice(dev);
+            }
+        } else{
+           break; 
+        } 
     }
 }
 
 void PiperBridge::Speak(const std::string& text) {
-    Resume(); // Ensure Piper is running
-    std::string command = text + "\n";
 
+    int status;
+    if (piperProcessId <= 0 || waitpid(piperProcessId, &status, WNOHANG) != 0) {
+        if (!StartPiper()) {
+            return;
+        }
+    }
+
+    this->isRunning = true;
+    SDL_PauseAudioDevice(dev, 0); 
+
+    Resume(); 
+    
+    std::string command = text + "\n";
     if (write(writePipe[1], command.c_str(), command.length()) == -1) {
         perror("Failed to send text to Piper");
+        piperProcessId = 0; 
     }
 }
 
-void PiperBridge::Stop(){
+void PiperBridge::Stop() {
+    if (piperProcessId > 0) {
+        kill(piperProcessId, SIGSTOP); 
+        this->isRunning = false;
         
-    if (piperProcessId > 0)
-        kill(piperProcessId, SIGSTOP);
+        SDL_LockAudioDevice(dev);
+        SDL_ClearQueuedAudio(dev);
+        SDL_PauseAudioDevice(dev, 1);
+        SDL_UnlockAudioDevice(dev);
+        
+    }
 }
 
 void PiperBridge::Resume(){
 
-    if (piperProcessId > 0) 
+    if (piperProcessId > 0){
         kill(piperProcessId, SIGCONT);
-
+        this->isRunning = true;
+        SDL_PauseAudioDevice(dev, 0);
+    }
+        
 }
 
 PiperBridge::~PiperBridge() {
@@ -85,7 +137,6 @@ PiperBridge::~PiperBridge() {
         waitpid(piperProcessId, &status, WNOHANG);
     }
 
-    close(writePipe[0]);
     close(writePipe[1]);
 }
 #endif
@@ -113,7 +164,7 @@ AdaVoice::AdaVoice(){
 #else
 AdaVoice::AdaVoice(SDL_AudioDeviceID dev) {
     this->dev = dev;
-    piper = new PiperBridge("./bin/piper/es_AR-daniela-high.onnx", dev);
+    piper = std::make_unique<PiperBridge>("./bin/piper/es_AR-daniela-high.onnx", dev);
 }
 #endif
 
@@ -124,8 +175,6 @@ AdaVoice::~AdaVoice(){
         pVoice = NULL;
     }
     ::CoUninitialize();
-#else
-    if(piper) delete piper;
 #endif
 }
 

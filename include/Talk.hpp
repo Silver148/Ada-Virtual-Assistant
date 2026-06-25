@@ -11,9 +11,12 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <SDL2/SDL_mixer.h>
+#include <atomic>
+#include <memory>
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -30,6 +33,8 @@ private:
     int readPipe; // Pipe descriptor for reading audio data from Piper
     pid_t piperProcessId;
     SDL_AudioDeviceID dev;
+    std::atomic<bool> isRunning{true};
+    std::string modelPath;
 
 public:
 
@@ -37,6 +42,7 @@ public:
     void Resume();
     void Speak(const std::string& message);
     void StreamAudio(SDL_AudioDeviceID dev);
+    bool StartPiper();
     PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev);
     ~PiperBridge();
 };
@@ -49,7 +55,7 @@ private:
     ISpVoice* pVoice = nullptr;
     HRESULT hr;
 #else
-    PiperBridge* piper = nullptr;
+    std::unique_ptr<PiperBridge> piper;
     SDL_AudioDeviceID dev;
 #endif
 
