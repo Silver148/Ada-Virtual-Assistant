@@ -40,7 +40,7 @@ ifeq ($(SYSTEM), Windows (MinGW))
            -lSDL2_image -lSDL2_mixer -lSDL2_ttf -L$(MD4C_LIB_DIR) -lmd4c -mwindows -lole32 -lsapi
 else
     INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify)
-    LIBS = -Wl,-rpath,'$$ORIGIN' -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
+    LIBS = -Wl,-rpath,'$$ORIGIN/bin/piper' -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
            -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify)
 endif
 
