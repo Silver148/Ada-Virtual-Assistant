@@ -26,7 +26,7 @@ bool PiperBridge::StartPiper() {
         close(audioPipe[0]); close(audioPipe[1]);
 
         //Best parameters for es_AR-daniela-high.onnx
-        execl("/usr/bin/taskset", "taskset", "-c", "0,1", "./bin/piper/piper",
+        execl("/usr/bin/taskset", "taskset", "-c", "0,1", "bin/piper/piper",
             "--model", modelPath.c_str(),
             "--output-raw",
             "--length-scale", "1.0", 
@@ -164,7 +164,7 @@ AdaVoice::AdaVoice(){
 #else
 AdaVoice::AdaVoice(SDL_AudioDeviceID dev) {
     this->dev = dev;
-    piper = std::make_unique<PiperBridge>("bin/piper/es_AR-daniela-high.onnx", dev);
+    piper = std::make_unique<PiperBridge>("bin/piper/piper/es_AR-daniela-high.onnx", dev);
 }
 #endif
 
