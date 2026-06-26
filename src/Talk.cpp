@@ -164,7 +164,7 @@ AdaVoice::AdaVoice(){
 #else
 AdaVoice::AdaVoice(SDL_AudioDeviceID dev) {
     this->dev = dev;
-    piper = std::make_unique<PiperBridge>("./bin/piper/es_AR-daniela-high.onnx", dev);
+    piper = std::make_unique<PiperBridge>("bin/piper/es_AR-daniela-high.onnx", dev);
 }
 #endif
 
