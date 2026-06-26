@@ -32,7 +32,7 @@ CURL_LIB_DIR = curl/lib/
 SDL2_LIB_DIR = SDL2-Mingw/x86_64-w64-mingw32/lib/
 MD4C_LIB_DIR = md4c/build/src/
 
-CXXFLAGS = -std=c++17 -Wall -O2
+CXXFLAGS = -std=c++17 -Wall -O0
 
 ifeq ($(SYSTEM), Windows (MinGW))
     INCS = -Icurl/include/ -Iinclude -ISDL2-Mingw/x86_64-w64-mingw32/include -Imd4c/src
@@ -40,7 +40,7 @@ ifeq ($(SYSTEM), Windows (MinGW))
            -lSDL2_image -lSDL2_mixer -lSDL2_ttf -L$(MD4C_LIB_DIR) -lmd4c -mwindows -lole32 -lsapi
 else
     INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify)
-    LIBS = -Wl,-rpath,'$$ORIGIN/bin/piper' -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
+    LIBS = -Wl,-rpath,'$$ORIGIN' -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
            -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify)
 endif
 

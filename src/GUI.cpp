@@ -889,7 +889,10 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
         /* AUTOMATIC WRAP FOR TEXT CURSOR*/
         int padding = 20;
-        int fontHeight = TTF_FontHeight(UserTextFont);
+        int fontHeight = 0;
+        if(!UserTextFont) return;
+        else fontHeight = TTF_FontHeight(UserTextFont); std::cerr << "Font height = 0";
+        
         int lineHeight = TTF_FontLineSkip(UserTextFont);
         int maxWidth = UserArea.w - 2 * padding;
         int currentLineW = 0;
