@@ -17,6 +17,7 @@
 #include <SDL2/SDL_mixer.h>
 #include <atomic>
 #include <memory>
+#include "main.hpp"
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)

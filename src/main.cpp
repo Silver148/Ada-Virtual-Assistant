@@ -40,6 +40,16 @@ std::string get_config_path() {
     return config_path.string();
 }
 
+std::string get_base_dir() {
+    char buffer[PATH_MAX];
+    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+    if (len != -1) {
+        buffer[len] = '\0';
+        return std::string(dirname(buffer));
+    }
+    return "";
+}
+
 int main(){
 
     if (setpriority(PRIO_PROCESS, 0, -10) == 0) {

@@ -655,7 +655,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
                                     pid_t pid = fork();
 
-                                    if(pid == 0){
+                                    if(pid < 0){
+                                        perror("Failed to fork process for executing application");
+                                    }else if(pid == 0){
                                         const char* home_dir = getenv("HOME");
                                         
                                         if(home_dir != nullptr){
@@ -670,8 +672,6 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                         execvp(args[0], args);
 
                                         exit(1);
-                                    }else{
-                                        perror("Failed to fork process for executing application");
                                     }
                                 #endif
 
