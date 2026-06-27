@@ -3,7 +3,7 @@ CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
 
-ifeq ($(SYSTEM), Windows_NT)
+ifeq ($(OS),Windows_NT)
 	CROSS = 1
 else
 	CROSS = 0
