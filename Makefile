@@ -115,7 +115,7 @@ make_debian_package:
 	@echo "Debian Package successfully created: ada-assistant_$(VERSION)_amd64.deb"
 
 pack_for_windows:
-	zip -r Ada-$(VERSION)-Windows.zip Ada_packed/
+	zip -r Ada-$(VERSION)-Windows-x64.zip Ada_packed/
 	@echo "Ada $(VERSION) was packed for Windows :D!"
 
 install_debian_package:
@@ -127,6 +127,7 @@ clean:
 	@rm -rf Ada_packed
 	@rm -f *.deb
 	@rm -f *.tar.gz
+	@rm -f *.zip
 	@echo "Cleaned!"
 
 .PHONY: all clean compile_md4c pack_exe
