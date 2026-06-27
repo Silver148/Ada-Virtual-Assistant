@@ -104,7 +104,10 @@ make_debian_package:
 	@printf '#!/bin/bash\nset -e\n\n# 1. Create the symbolic link\nln -sf /opt/ada/Ada /usr/local/bin/ada\n\n# 2. Attempt setcap\nsetcap cap_sys_nice=eip /opt/ada/Ada 2>/dev/null || echo "Note: Could not apply setcap, using standard permissions."\n\nexit 0' > ada_deb/DEBIAN/postinst
 	@chmod 755 ada_deb/DEBIAN/postinst
 
-	@printf "Package: ada-assistant\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: amd64\nDepends: libcurl4, libsdl2-2.0-0\nMaintainer: Juan Yaguaro (aka silverhacker)\nDescription: AI-powered virtual assistant.\n" > ada_deb/DEBIAN/control
+	@printf '#!/bin/bash\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm
+	@chmod 755 ada_deb/DEBIAN/prerm
+
+	@printf "Package: ada-assistant\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: amd64\nDepends: libcurl4, libsdl2-2.0-0\nMaintainer: Juan Yaguaro (aka silverhacker) <silverhckr6@gmail.com>\nDescription: AI-powered virtual assistant.\n" > ada_deb/DEBIAN/control
 
 	dpkg-deb --root-owner-group --build ada_deb ada-assistant_$(VERSION)_amd64.deb
 
