@@ -27,6 +27,7 @@ main.c
 
 std::string API_KEY = "";
 
+#if defined(__linux__) || defined(__unix__)
 std::string get_config_path() {
     const char* home_dir = std::getenv("HOME");
     if (!home_dir) return "";
@@ -49,9 +50,11 @@ std::string get_base_dir() {
     }
     return "";
 }
+#endif
 
 int main(){
 
+    #if defined(__linux__) || defined(__unix__)
     if (setpriority(PRIO_PROCESS, 0, -10) == 0) {
         std::cout << "Priority set to high successfully." << std::endl;
     }else{
@@ -63,6 +66,7 @@ int main(){
     if (ioprio_set == 0) {
         std::cout << "I/O priority set succesfully." << std::endl;
     }
+    #endif
 
     AI_ENGINE AI = AI_ENGINE();
 

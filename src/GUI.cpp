@@ -14,22 +14,31 @@ GUI.cpp
 
 #if defined(_WIN32) || defined(_WIN64)
 GUI::GUI() : voice(){
-    if(SDL_Init(SDL_INIT_VIDEO) < 0 || IMG_Init(IMG_INIT_PNG)
+    if(SDL_Init(SDL_INIT_VIDEO) < 0 || IMG_Init(IMG_INIT_PNG) < 0
     || TTF_Init() < 0){
         throw std::runtime_error("Error to init SDL, IMG and TTF");
     }
 
     window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+
+    if(!window){
+        throw std::runtime_error("Error to create window");
+    }
     
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
+    if(!renderer){
+        throw std::runtime_error("Error to create renderer");
+    }
+
     Ada_SpriteSheet_surface = IMG_Load("Ada_SpriteSheet.png");
 
-    Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
-
     if(Ada_SpriteSheet_surface){
+        Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
         SDL_FreeSurface(Ada_SpriteSheet_surface);
         Ada_SpriteSheet_surface = nullptr;
+    }else{
+        fprintf(stderr, "Error to render Ada texture");
     }
         
     Ada_src_rect.x = 0;
@@ -42,25 +51,34 @@ GUI::GUI() : voice(){
     Ada_dest_rect.w = FRAME_WIDTH;
     Ada_dest_rect.h = FRAME_HEIGHT;
 
-    UserTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
-    AdaTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
-    CopyFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
-    TextVoiceButton_font = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
-    
-    CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
-    CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
+    std::string TextFontPath = "fonts/Segoe-UI-EMOJI.ttf";
 
-    if(CopySurface){
-        SDL_FreeSurface(CopySurface);
-        CopySurface = nullptr;
+    UserTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
+    AdaTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
+    CopyFont = TTF_OpenFont(TextFontPath.c_str(), 16);
+    TextVoiceButton_font = TTF_OpenFont(TextFontPath.c_str(), 16); 
+
+    if(CopyFont){
+        CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
+        if(CopySurface){
+            CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
+            SDL_FreeSurface(CopySurface);
+            CopySurface = nullptr;
+        }else{
+            fprintf(stderr, "Error to render 'copy' text\n");
+        }
     }
 
-    TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
-    TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
-
-    if(TextVoiceButton_surf){
-        SDL_FreeSurface(TextVoiceButton_surf);
-       TextVoiceButton_surf = nullptr;
+    if(TextVoiceButton_font){
+        TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
+        
+        if(TextVoiceButton_surf){
+            TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
+            SDL_FreeSurface(TextVoiceButton_surf);
+            TextVoiceButton_surf = nullptr;
+        }else{
+            fprintf(stderr, "Error to render text 'voice' button\n");
+        }    
     }
 
     r = Reminders();
