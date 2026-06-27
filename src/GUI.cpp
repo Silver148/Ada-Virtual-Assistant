@@ -14,9 +14,10 @@ GUI.cpp
 
 #if defined(_WIN32) || defined(_WIN64)
 GUI::GUI() : voice(){
-    SDL_Init(SDL_INIT_VIDEO);
-    IMG_Init(IMG_INIT_PNG);
-    TTF_Init();
+    if(SDL_Init(SDL_INIT_VIDEO) < 0 || IMG_Init(IMG_INIT_PNG)
+    || TTF_Init() < 0){
+        throw std::runtime_error("Error to init SDL, IMG and TTF");
+    }
 
     window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     
@@ -67,20 +68,34 @@ GUI::GUI() : voice(){
 }
 #else
 GUI::GUI() : audioEngine(), voice(audioEngine.dev) {
-    IMG_Init(IMG_INIT_PNG);
-    TTF_Init();
+
+    if(IMG_Init(IMG_INIT_PNG) < 0 || TTF_Init() < 0){
+        throw std::runtime_error("Error to init IMG and TTF!");
+    }
+
+    std::string base = get_base_dir();
 
     window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+
+    if(!window){
+        throw std::runtime_error("Error to create window");
+    }
     
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    Ada_SpriteSheet_surface = IMG_Load("Ada_SpriteSheet.png");
+    if(!renderer){
+        throw std::runtime_error("Error to create renderer");
+    }
 
-    Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
+    std::string SpriteSheetPath = base + "/Ada_SpriteSheet.png";
+    Ada_SpriteSheet_surface = IMG_Load(SpriteSheetPath.c_str());
 
     if(Ada_SpriteSheet_surface){
+        Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
         SDL_FreeSurface(Ada_SpriteSheet_surface);
         Ada_SpriteSheet_surface = nullptr;
+    }else{
+        fprintf(stderr, "Error to render Ada texture");
     }
         
     Ada_src_rect.x = 0;
@@ -93,25 +108,35 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev) {
     Ada_dest_rect.w = FRAME_WIDTH;
     Ada_dest_rect.h = FRAME_HEIGHT;
 
-    UserTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
-    AdaTextFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 20);
-    CopyFont = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
-    TextVoiceButton_font = TTF_OpenFont("fonts/Segoe-UI-EMOJI.ttf", 16);
-    
-    CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
-    CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
 
-    if(CopySurface){
-        SDL_FreeSurface(CopySurface);
-        CopySurface = nullptr;
+    std::string TextFontPath = base + "/fonts/Segoe-UI-EMOJI.ttf";
+
+    UserTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
+    AdaTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
+    CopyFont = TTF_OpenFont(TextFontPath.c_str(), 16);
+    TextVoiceButton_font = TTF_OpenFont(TextFontPath.c_str(), 16); 
+
+    if(CopyFont){
+        CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
+        if(CopySurface){
+            CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
+            SDL_FreeSurface(CopySurface);
+            CopySurface = nullptr;
+        }else{
+            fprintf(stderr, "Error to render 'copy' text\n");
+        }
     }
 
-    TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
-    TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
-
-    if(TextVoiceButton_surf){
-        SDL_FreeSurface(TextVoiceButton_surf);
-       TextVoiceButton_surf = nullptr;
+    if(TextVoiceButton_font){
+        TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
+        
+        if(TextVoiceButton_surf){
+            TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
+            SDL_FreeSurface(TextVoiceButton_surf);
+            TextVoiceButton_surf = nullptr;
+        }else{
+            fprintf(stderr, "Error to render text 'voice' button\n");
+        }    
     }
 
     r = Reminders();
@@ -123,17 +148,33 @@ GUI::~GUI() {
 
     if(Ada_SpriteSheet_texture) {
         SDL_DestroyTexture(Ada_SpriteSheet_texture);
+        Ada_SpriteSheet_texture = nullptr;
     }
 
     if(thinking_texture){
         SDL_DestroyTexture(thinking_texture);
+        thinking_texture = nullptr;
+    }
+
+    if(TextVoiceButton_tex){
+        SDL_DestroyTexture(TextVoiceButton_tex);
+        TextVoiceButton_tex = nullptr;
+    }
+
+    if(CopyTexture){
+        SDL_DestroyTexture(CopyTexture);
+        CopyTexture = nullptr;
     }
 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+
     IMG_Quit();
+
     TTF_CloseFont(UserTextFont);
     TTF_CloseFont(AdaTextFont);
+    TTF_CloseFont(TextVoiceButton_font);
+
     TTF_Quit();
     SDL_Quit();
 }
@@ -890,8 +931,8 @@ void GUI::RenderGui(AI_ENGINE &AI){
         /* AUTOMATIC WRAP FOR TEXT CURSOR*/
         int padding = 20;
         int fontHeight = 0;
-        if(!UserTextFont) return;
-        else fontHeight = TTF_FontHeight(UserTextFont); std::cerr << "Font height = 0";
+        if(!UserTextFont){ return; std::cerr << "Font height = 0"; }
+        else { fontHeight = TTF_FontHeight(UserTextFont); }
         
         int lineHeight = TTF_FontLineSkip(UserTextFont);
         int maxWidth = UserArea.w - 2 * padding;

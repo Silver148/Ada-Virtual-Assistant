@@ -13,6 +13,7 @@
 #include "AI_Engine.hpp"
 #if defined(__linux__) || defined(__unix__)
 #include "Audio_Engine.hpp"
+#include "main.hpp"
 #endif
 
 enum LineType {

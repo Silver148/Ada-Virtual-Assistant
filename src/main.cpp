@@ -131,7 +131,9 @@ int main(){
 #if defined(_WIN32) || defined(_WIN64)
     GUI gui = GUI();
 #else
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0){
+        throw std::runtime_error("Error to init SDL!");
+    }
     GUI gui = GUI();
 #endif
 
