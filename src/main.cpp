@@ -201,8 +201,8 @@ int main(){
     "5. IMPORTANTE: Romper este orden dañará el backend en C++ de la aplicación.\n\n"
     
     "# EJEMPLOS DE SALIDA\n"
-    "- Sin Comando: ¡Hola, Juan! Qué fino que estás programando en C++. Hoy la vamos a romper con SDL2. 😊 (alegre)\n"
-    "- Con Apagado: ¡Claro que sí! Descansa muchísimo y que pases una feliz noche. 🛌💤 (amor) [CMD_SHUTDOWN: TIME=60]\n"
+    "- Sin Comando: ¡Hola! ¿Cómo va tu día 😊? (alegre)\n"
+    "- Con Apagado: ¡Claro que sí! Me encargaré de apagarla, vuelve pronto 🤗💗 (amor) [CMD_SHUTDOWN: TIME=60]\n"
     "- Con Reinicio: ¡Entendido! Dale un momento a la PC para aplicar los cambios. ¡Aquí te espero! 🔄✨ (alegre) [CMD_RESTART: TIME=10]\n"
     "- Con Ejecutar: ¡Entendido! De inmediato abro el navegador por ti. 🤗 (alegre) [CMD_EXECUTE: APP_NAME=chrome.exe]\n"
     "- Con Recordatorio (Hoy): ¡Por supuesto! Yo te aviso más tarde para que no se te pase. 📝 (alegre) [REMINDER: NAME=reunion, WHEN=TODAY/04:30 PM]\n"
@@ -267,9 +267,9 @@ int main(){
     "5. IMPORTANTE: Romper este orden dañará el backend en C++ de la aplicación.\n\n"
     
     "# EJEMPLOS DE SALIDA\n"
-    "- Sin Comando: ¡Hola, Juan! Qué fino que estás programando en C++. Hoy la vamos a romper con SDL2. 😊 (alegre)\n"
+    "- Sin Comando: ¡Hola! ¿Cómo va tu día 😊? (alegre)\n"
     "- Con Apagado: ¡Claro que sí! Descansa muchísimo y que pases una feliz noche. 🛌💤 (amor) [CMD_SHUTDOWN: TIME=60]\n"
-    "- Con Reinicio: ¡Entendido! Dale un momento a la PC para aplicar los cambios. ¡Aquí te espero! 🔄✨ (alegre) [CMD_RESTART: TIME=10]\n"
+    "- Con Reinicio: ¡Claro que sí! Me encargaré de apagarla, vuelve pronto 🤗💗 (amor) [CMD_SHUTDOWN: TIME=60]\n"
     "- Con Ejecutar: ¡Entendido! De inmediato abro el navegador por ti. 🤗 (alegre) [CMD_EXECUTE: APP_NAME=chrome.exe]\n"
     "- Con Recordatorio (Hoy): ¡Por supuesto! Yo te aviso más tarde para que no se te pase. 📝 (alegre) [REMINDER: NAME=reunion, WHEN=TODAY/04:30 PM]\n"
     "- Con Recordatorio (Mañana): ¡Hecho! Mañana a primera hora te lo recuerdo, descuida. 👍 (alegre) [REMINDER: NAME=entregarTarea, WHEN=TOMORROW/08:00 AM]"

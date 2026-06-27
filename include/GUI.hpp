@@ -98,7 +98,7 @@ public:
     ~GUI();
 
     void RenderGui(AI_ENGINE &AI);
-    void GestosAda(int id);
+    void AdaGestures(int id);
 
     void ProcessAIResponse(const std::string& rawText);
     void MakeResponseTexture(SDL_Rect ResponseArea);

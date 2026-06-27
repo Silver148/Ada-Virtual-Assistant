@@ -20,16 +20,16 @@ void AI_ENGINE::LoadMemories(const std::string &file){
     std::ifstream f(file);
 
     if(f.peek() == std::ifstream::traits_type::eof()){
-        //std::cout << "Memoria vacía, creando base..." << std::endl;
+        //std::cout << "Empty memory, making base..." << std::endl;
         memories = json::array();
         return;
     }
 
     if(f.is_open()){
         f >> memories;
-        //std::cout << "Recuerdos cargados ;)..." << std::endl;
+        //std::cout << "Memories loaded ;)..." << std::endl;
     }else{
-        std::cerr << "Error al cargar recuerdos" << std::endl;
+        std::cerr << "Error to load memories" << std::endl;
     }
 }
 
@@ -39,13 +39,14 @@ void AI_ENGINE::SaveMemories(const std::string &file){
     if(f.is_open()){
         f << memories.dump(4);
     }else{
-        std::cerr << "Error al guardar recuerdos" << std::endl;
+        std::cerr << "Error to save memories" << std::endl;
     }
 }
 
 AI_ENGINE::AI_ENGINE(){
-    AI_config["model"] = "openai/gpt-oss-120b:free";
+    AI_config["model"] = "google/gemma-4-26b-a4b-it:free";
     AI_config["max_tokens"] = 2048;
+    AI_config["include_reasoning"] = false;
     AI_config["stream"] = false;
 
     #if defined(__linux__) || defined(__unix__)
@@ -83,7 +84,7 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
 
         AI_config["messages"].push_back({{"role", "user"}, {"content", Prompt}});
 
-        //std::cout << "JSON Listo para enviar:\n" << AI_config.dump(4) << std::endl;
+        //std::cout << "JSON ready to send:\n" << AI_config.dump(4) << std::endl;
 
         CURL* curl = curl_easy_init();
 
@@ -143,13 +144,23 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
                         return ada_reply;
 
                     } else if (response.contains("error")) {
-
+                        int error_code = response["error"]["code"];
                         std::string error_msg = response["error"]["message"];
-                        //std::cerr << "API Error: " << error_msg << std::endl;
-                        final_reply = "Error de la API: " + error_msg;
-                    }
 
-                    return "Al parecer ocurrió un error inesperado en la respuesta del servidor.";
+                        //std::cerr << "API Error: " << error_msg << std::endl;
+
+                        if(error_code == 429){
+                            final_reply = "Modelo de IA saturado, por favor espere un momento...";
+                        }else if(error_code == 401){
+                            final_reply = "API Key vencida o inválida, modifique el archivo api_key.txt con una key válida en .config/ada si está en Linux o "
+                            "en la raíz de la carpeta de Ada si está en Windows";
+                        }else if(error_code == 413){
+                            final_reply = "Limite de contexto superado";
+                        }else{
+                            return "Error inesperado, el servidor dice:(" + std::to_string(error_code) + " " + error_msg;
+                        }
+                        
+                    }
 
                 } catch (const json::exception& e) {
                     //std::cerr << "JSON Exception caught: " << e.what() << std::endl;

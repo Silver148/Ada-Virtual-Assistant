@@ -360,7 +360,7 @@ void GUI::MakeResponseTexture(SDL_Rect ResponseArea) {
 }
 
 /* FUNCS GUI*/
-void GUI::GestosAda(int id){
+void GUI::AdaGestures(int id){
 
     int column = id % 5;
     int row = id / 5;
@@ -576,7 +576,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
                     }
                 }
 
-                else if(e.key.keysym.sym == SDLK_RETURN && !UserText.empty()){
+                else if(e.key.keysym.sym == SDLK_RETURN && !UserText.empty() && !IsThinking){
 
                     std::string prompt = UserText;
                     UserText = "";
@@ -782,42 +782,42 @@ void GUI::RenderGui(AI_ENGINE &AI){
                             }
 
                             if(remoteResponse.rfind("(alegre)") != std::string::npos){
-                                this->GestosAda(0);
+                                this->AdaGestures(0);
                                 size_t pos = remoteResponse.find("(alegre)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(sorpresa)") != std::string::npos){
-                                this->GestosAda(1);
+                                this->AdaGestures(1);
                                 size_t pos = remoteResponse.rfind("(sorpresa)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(tristeza)") != std::string::npos){
-                                this->GestosAda(4);
+                                this->AdaGestures(4);
                                 size_t pos = remoteResponse.rfind("(tristeza)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(amor)") != std::string::npos){
-                                this->GestosAda(11);
+                                this->AdaGestures(11);
                                 size_t pos = remoteResponse.rfind("(amor)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(explicación)") != std::string::npos){
-                                this->GestosAda(10);
+                                this->AdaGestures(10);
                                 size_t pos = remoteResponse.rfind("(explicación)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(festejando)") != std::string::npos){
-                                this->GestosAda(6);
+                                this->AdaGestures(6);
                                 size_t pos = remoteResponse.rfind("(festejando)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(preocupación)") != std::string::npos){
-                                this->GestosAda(9);
+                                this->AdaGestures(9);
                                 size_t pos = remoteResponse.rfind("(preocupación)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
                             else if(remoteResponse.rfind("(tomando en cuenta)") != std::string::npos){
-                                this->GestosAda(7);
+                                this->AdaGestures(7);
                                 size_t pos = remoteResponse.rfind("(tomando en cuenta)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
