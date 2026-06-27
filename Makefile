@@ -114,6 +114,10 @@ make_debian_package:
 	rm -rf ada_deb
 	@echo "Debian Package successfully created: ada-assistant_$(VERSION)_amd64.deb"
 
+pack_for_windows:
+	zip -r Ada-$(VERSION)-Windows.zip Ada_packed/
+	@echo "Ada $(VERSION) was packed for Windows :D!"
+
 install_debian_package:
 	sudo apt install ./ada-assistant_$(VERSION)_amd64.deb
 
