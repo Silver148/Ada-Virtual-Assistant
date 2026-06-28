@@ -100,7 +100,7 @@ pack_exe:
 ifeq ($(SYSTEM), Windows (MinGW))
 	cp curl/bin/libcurl-x64.dll Ada_packed/libcurl-x64.dll
 	cp -f SDL2-Mingw/x86_64-w64-mingw32/bin/*.dll Ada_packed/
-	cp -f vosk_win64/libvosk.dll Ada_packed/
+	cp -f vosk_win64/*.dll Ada_packed/
 else
 	rm -f Ada_packed/libmd4c.so Ada_packed/libmd4c.so.0
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
