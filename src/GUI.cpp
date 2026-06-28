@@ -13,7 +13,7 @@ GUI.cpp
 #define FRAME_HEIGHT 200
 
 #if defined(_WIN32) || defined(_WIN64)
-GUI::GUI() : voice(){
+GUI::GUI() : voice(), stt(){
     if(SDL_Init(SDL_INIT_VIDEO) < 0 || IMG_Init(IMG_INIT_PNG) < 0
     || TTF_Init() < 0){
         throw std::runtime_error("Error to init SDL, IMG and TTF");
@@ -85,7 +85,7 @@ GUI::GUI() : voice(){
     r.LoadReminders();
 }
 #else
-GUI::GUI() : audioEngine(), voice(audioEngine.dev) {
+GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
 
     if(IMG_Init(IMG_INIT_PNG) < 0 || TTF_Init() < 0){
         throw std::runtime_error("Error to init IMG and TTF!");
@@ -159,6 +159,8 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev) {
 
     r = Reminders();
     r.LoadReminders();
+
+    stt.Init();
 }
 #endif
 
@@ -369,6 +371,18 @@ void GUI::AdaGestures(int id){
     Ada_src_rect.y = row * FRAME_HEIGHT;
 }
 
+void DrawFilledCircle(SDL_Renderer* renderer, int x, int y, int radius) {
+    for (int w = 0; w < radius * 2; w++) {
+        for (int h = 0; h < radius * 2; h++) {
+            int dx = radius - w;
+            int dy = radius - h;
+            if ((dx*dx + dy*dy) <= (radius * radius)) {
+                SDL_RenderDrawPoint(renderer, x + dx, y + dy);
+            }
+        }
+    }
+}
+
 void GUI::RenderGui(AI_ENGINE &AI){
     bool running = true;
     bool fullscreen = false;
@@ -497,7 +511,31 @@ void GUI::RenderGui(AI_ENGINE &AI){
                 }
             }
 
+            else if(e.type == SDL_AUDIODEVICEADDED){
+
+                if(e.adevice.iscapture){
+                    stt.ResetMic();
+                }
+            }
+
             else if(e.type == SDL_KEYDOWN){
+
+                bool shift = (e.key.keysym.mod & KMOD_SHIFT);
+
+                if(e.key.keysym.sym == SDLK_F1 && shift){
+
+                    if(e.key.repeat == 0){
+                        if(!isListening){
+                            stt.StartListening();
+                            isListening = true;
+                        }else{
+                            stt.StopListening();
+                            isListening = false;
+                        }
+                    }
+                        
+                }
+
                 if (e.key.keysym.sym == SDLK_BACKSPACE) {
                     if (cursorIndex > 0 && !UserText.empty()) {
         
@@ -1036,6 +1074,39 @@ void GUI::RenderGui(AI_ENGINE &AI){
         SDL_RenderSetClipRect(renderer, NULL);
         
         r.CheckReminders();
+
+        std::string newMicText = stt.TextFromMic();
+        if(isListening && !newMicText.empty())
+        {
+            UserText.insert(cursorIndex, newMicText);
+            cursorIndex += strlen(newMicText.c_str());
+                
+            if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+            if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+
+            UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+            UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+
+            UserTextRect.x = UserArea.x + 20;
+            UserTextRect.y = UserArea.y + 20;
+            UserTextRect.w = UserTextSurface->w;
+            UserTextRect.h = UserTextSurface->h;
+
+            if (UserTextRect.h > (UserArea.h - 40)) {
+                maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
+                // Auto-scroll
+                userScrollY = maxUserScrollY; 
+            } else {
+                maxUserScrollY = 0;
+                userScrollY = 0;
+            }
+        }
+
+        
+        if (isListening && (SDL_GetTicks() % 1000 < 500)) {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+            DrawFilledCircle(renderer, 1200, 300, 10);
+        }
 
         SDL_RenderPresent(renderer);
 

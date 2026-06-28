@@ -11,6 +11,7 @@
 #include "Reminders.hpp"
 #include "Talk.hpp"
 #include "AI_Engine.hpp"
+#include "STT.hpp"
 #if defined(__linux__) || defined(__unix__)
 #include "Audio_Engine.hpp"
 #include "main.hpp"
@@ -91,6 +92,9 @@ private:
     bool VoiceIsActive = false;
 
     size_t cursorIndex = 0;
+
+    STT stt;
+    bool isListening = false;
     
 public:
 

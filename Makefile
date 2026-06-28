@@ -1,4 +1,4 @@
-VERSION = 1.4.0
+VERSION = 1.5.0
 CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
@@ -31,17 +31,23 @@ OBJ_DIR = obj
 CURL_LIB_DIR = curl/lib/
 SDL2_LIB_DIR = SDL2-Mingw/x86_64-w64-mingw32/lib/
 MD4C_LIB_DIR = md4c/build/src/
+VOSK_LINUX = vosk_linux/
+VOSK_WINDOWS = vosk_win64/
 
-CXXFLAGS = -std=c++17 -Wall -O0
+CXXFLAGS = -std=c++17 -Wall -O2
 
 ifeq ($(SYSTEM), Windows (MinGW))
-    INCS = -Icurl/include/ -Iinclude -ISDL2-Mingw/x86_64-w64-mingw32/include -Imd4c/src
-    LIBS = -static-libgcc -static-libstdc++ -L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 \
-           -lSDL2_image -lSDL2_mixer -lSDL2_ttf -L$(MD4C_LIB_DIR) -lmd4c -mwindows -lole32 -lsapi
+    INCS = -Icurl/include/ -Iinclude -ISDL2-Mingw/x86_64-w64-mingw32/include -Imd4c/src \
+			-I$(VOSK_WINDOWS)
+    LIBS = -static-libgcc -static-libstdc++ -Wl,-Bstatic -lwinpthread -Wl,-Bdynamic \
+			-L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer\
+            -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk \
+			-lmd4c -mwindows -lole32 -lsapi 
 else
-    INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify)
-    LIBS = -Wl,-rpath,'$$ORIGIN' -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
-           -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify)
+    INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX)
+    LIBS = -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
+           -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify) -L$(VOSK_LINUX) -lvosk \
+		   -Wl,-rpath,'$$ORIGIN'
 endif
 
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
@@ -84,15 +90,20 @@ pack_exe:
 	cp $(EXE) Ada_packed/$(EXE)
 	cp -rf fonts Ada_packed/fonts
 	cp Ada_SpriteSheet.png Ada_packed/Ada_SpriteSheet.png
+	cp -rf vosk_model Ada_packed/vosk_model
 ifeq ($(SYSTEM), Windows (MinGW))
 	cp curl/bin/libcurl-x64.dll Ada_packed/libcurl-x64.dll
 	cp -f SDL2-Mingw/x86_64-w64-mingw32/bin/*.dll Ada_packed/
+	cp -f vosk_win64/libvosk.dll Ada_packed/
 else
 	rm -f Ada_packed/libmd4c.so Ada_packed/libmd4c.so.0
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
 	ln -s libmd4c.so Ada_packed/libmd4c.so.0
+	cp -f vosk_linux/libvosk.so Ada_packed/libvosk.so
 	cp -rf bin Ada_packed/bin
-	sudo setcap cap_sys_nice=eip ./Ada_packed/$(EXE)
+
+	@chmod +x Ada_packed/Ada
+
 	tar -czvf Ada-$(VERSION)-linux-amd64.tar.gz -C Ada_packed .
 endif
 
@@ -101,7 +112,7 @@ make_debian_package:
 	mkdir -p ada_deb/DEBIAN
 	cp -r Ada_packed/* ada_deb/opt/ada/
 
-	@printf '#!/bin/bash\nset -e\n\n# 1. Create the symbolic link\nln -sf /opt/ada/Ada /usr/local/bin/ada\n\n# 2. Attempt setcap\nsetcap cap_sys_nice=eip /opt/ada/Ada 2>/dev/null || echo "Note: Could not apply setcap, using standard permissions."\n\nexit 0' > ada_deb/DEBIAN/postinst
+	@printf '#!/bin/bash\nset -e\n\n# Create the symbolic link\nln -sf /opt/ada/Ada /usr/local/bin/ada\n\n#' > ada_deb/DEBIAN/postinst
 	@chmod 755 ada_deb/DEBIAN/postinst
 
 	@printf '#!/bin/bash\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm

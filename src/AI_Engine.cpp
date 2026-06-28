@@ -153,11 +153,11 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
                             final_reply = "Modelo de IA saturado, por favor espere un momento...";
                         }else if(error_code == 401){
                             final_reply = "API Key vencida o inválida, modifique el archivo api_key.txt con una key válida en .config/ada si está en Linux o "
-                            "en la raíz de la carpeta de Ada si está en Windows";
+                            "en la raíz de la carpeta de Ada si está en Windows.";
                         }else if(error_code == 413){
-                            final_reply = "Limite de contexto superado";
+                            final_reply = "Limite de contexto superado.";
                         }else{
-                            return "Error inesperado, el servidor dice:(" + std::to_string(error_code) + " " + error_msg;
+                            return "Error inesperado, el servidor dice:(" + std::to_string(error_code) + " " + error_msg + ").";
                         }
                         
                     }

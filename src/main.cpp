@@ -42,6 +42,7 @@ std::string get_config_path() {
 }
 
 std::string get_base_dir() {
+
     char buffer[PATH_MAX];
     ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
     if (len != -1) {
@@ -53,21 +54,7 @@ std::string get_base_dir() {
 #endif
 
 int main(){
-
-    #if defined(__linux__) || defined(__unix__)
-    if (setpriority(PRIO_PROCESS, 0, -10) == 0) {
-        std::cout << "Priority set to high successfully." << std::endl;
-    }else{
-        std::cerr << "Failed to set priority: " << strerror(errno) << std::endl;
-    }
-
-    int ioprio_set = syscall(SYS_ioprio_set, 1, 0, 4 | (2 << 13));
-
-    if (ioprio_set == 0) {
-        std::cout << "I/O priority set succesfully." << std::endl;
-    }
-    #endif
-
+    
     AI_ENGINE AI = AI_ENGINE();
 
     #if defined(_WIN32) || defined(_WIN64)

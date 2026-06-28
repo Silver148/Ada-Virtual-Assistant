@@ -41,10 +41,10 @@ void SaveCache(const std::string& filename){
             file.close();
 
         }else{
-            std::cout << "No se puedo escribir el archivo: " << filename << std::endl;
+            std::cout << "Failed to write cache file" << filename << std::endl;
         }
     } catch(const std::exception& e){
-        std::cerr << "[EXCEPCIÓN]: Fallo al guardar la caché de apps: " << e.what() << std::endl;
+        std::cerr << "Failed to save apps cache" << e.what() << std::endl;
     }
 }
 
@@ -53,7 +53,7 @@ void LoadCache(const std::string& filename){
     try {
         std::ifstream file(filename);
         if (!file.is_open()) {
-            std::cout << "[INFO]: No hay caché previa de aplicaciones. Se creará una nueva al cerrar." << std::endl;
+            std::cout << "Creating a new app cache..." << std::endl;
             return;
         }
 
@@ -66,7 +66,7 @@ void LoadCache(const std::string& filename){
         std::cout << "[ÉXITO]: " << discoveredAppsCache.size() << " aplicaciones cargadas desde la caché JSON." << std::endl;
 
     } catch (const json::exception& e) {
-        std::cerr << "[ERROR]: La caché JSON está corrupta o mal estructurada: " << e.what() << std::endl;
+        std::cerr << "Json cache is bad" << e.what() << std::endl;
     }
 }
 
@@ -75,7 +75,6 @@ void RecursiveSearch(const fs::path& currentPath, const std::string& target, con
 
     const auto options = fs::directory_options::skip_permission_denied;
     try {
-        // Usamos el iterador simple (no recursivo), que es mil veces más estable ante errores
         for (const auto& entry : fs::directory_iterator(currentPath, options)) {
             try {
                 if (entry.is_directory()) {

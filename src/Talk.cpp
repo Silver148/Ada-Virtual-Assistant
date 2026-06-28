@@ -29,7 +29,7 @@ bool PiperBridge::StartPiper() {
         std::string piper_path = base + "/bin/piper/piper";
 
         //Best parameters for es_AR-daniela-high.onnx
-        execl("/usr/bin/taskset", "taskset", "-c", "0,1", piper_path.c_str(),
+        execl(piper_path.c_str(), piper_path.c_str(),
             "--model", modelPath.c_str(),
             "--output-raw",
             "--length-scale", "1.0", 
