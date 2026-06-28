@@ -93,7 +93,7 @@ else
 	ln -s libmd4c.so Ada_packed/libmd4c.so.0
 	cp -rf bin Ada_packed/bin
 	sudo setcap cap_sys_nice=eip ./Ada_packed/$(EXE)
-	tar -czvf Ada-$(VERSION).tar.gz -C Ada_packed .
+	tar -czvf Ada-$(VERSION)-linux-amd64.tar.gz -C Ada_packed .
 endif
 
 make_debian_package:
