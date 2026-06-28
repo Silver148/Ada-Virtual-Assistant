@@ -12,8 +12,14 @@ endif
 ifeq ($(CROSS), 1)
     EXE = Ada.exe
     SYSTEM = Windows (MinGW)
-    CPP = x86_64-w64-mingw32-g++
-    CC  = x86_64-w64-mingw32-gcc
+ifeq ($(OS),Windows_NT)
+	CPP = g++
+    CC  = gcc   
+else
+	CPP = x86_64-w64-mingw32-g++-posix
+    CC  = x86_64-w64-mingw32-gcc-posix
+endif
+
     WINDRES = x86_64-w64-mingw32-windres
     SOURCES = $(filter-out $(SRC_DIR)/Audio_Engine.cpp, $(wildcard $(SRC_DIR)/*.cpp))
     RES_OBJ = $(OBJ_DIR)/resource.o
