@@ -18,7 +18,6 @@ private:
     VoskModel* model;
     
     SDL_AudioSpec desiredSpec, obtainedSpec;
-    std::vector<uint8_t> leftoverBuffer;
 
     json MicText;
     std::mutex mtx;
