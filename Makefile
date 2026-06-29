@@ -138,7 +138,7 @@ install_debian_package:
 	sudo apt install ./ada-assistant_$(VERSION)_amd64.deb
 
 clean:
-	@rm -rf $(OBJ_DIR) $(EXE) *.exe
+	@rm -rf $(OBJ_DIR) *.exe Ada
 	@rm -rf md4c/build
 	@rm -rf Ada_packed
 	@rm -f *.deb
