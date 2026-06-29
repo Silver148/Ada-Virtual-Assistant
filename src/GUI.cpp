@@ -14,7 +14,7 @@ GUI.cpp
 
 #if defined(_WIN32) || defined(_WIN64)
 GUI::GUI() : voice(), stt(){
-    if(SDL_Init(SDL_INIT_VIDEO) < 0 || IMG_Init(IMG_INIT_PNG) < 0
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0 || IMG_Init(IMG_INIT_PNG) < 0
     || TTF_Init() < 0){
         throw std::runtime_error("Error to init SDL, IMG and TTF");
     }
@@ -83,6 +83,8 @@ GUI::GUI() : voice(), stt(){
 
     r = Reminders();
     r.LoadReminders();
+
+    stt.Init();
 }
 #else
 GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
@@ -512,9 +514,34 @@ void GUI::RenderGui(AI_ENGINE &AI){
             }
 
             else if(e.type == SDL_AUDIODEVICEADDED){
+                    if(stt.mic == 0 && e.adevice.iscapture){
+                        std::cout << "Mic added. Checking current status: " << stt.mic << std::endl;
 
-                if(e.adevice.iscapture){
-                    stt.ResetMic();
+                        std::cout << "Re-initializing microphone..." << std::endl;
+
+                        if(stt.ReInitMic()){
+                            if(isListening){
+                                stt.StartListening();
+                            }
+                        }else{
+                            isListening = false;
+                        }
+                        
+                    }
+                }
+
+            else if(e.type == SDL_AUDIODEVICEREMOVED){
+                if (e.adevice.iscapture && stt.mic != 0){
+                        SDL_CloseAudioDevice(stt.mic);
+                        stt.mic = 0;
+
+                        if (stt.recognizer != nullptr) {
+                            vosk_recognizer_free(stt.recognizer);
+                            stt.recognizer = nullptr; 
+                        }
+
+                        isListening = false;
+                        std::cout << "Microphone disconected" << std::endl;
                 }
             }
 
@@ -526,8 +553,15 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
                     if(e.key.repeat == 0){
                         if(!isListening){
-                            stt.StartListening();
-                            isListening = true;
+                            if (stt.mic == 0) {
+                                stt.ReInitMic();
+                            }
+
+                            if(stt.mic != 0){
+                                stt.StartListening();
+                                isListening = true;
+                            }
+
                         }else{
                             stt.StopListening();
                             isListening = false;

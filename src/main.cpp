@@ -54,7 +54,7 @@ std::string get_base_dir() {
 #endif
 
 int main(){
-    
+
     AI_ENGINE AI = AI_ENGINE();
 
     #if defined(_WIN32) || defined(_WIN64)
@@ -122,7 +122,7 @@ int main(){
 #if defined(_WIN32) || defined(_WIN64)
     GUI gui = GUI();
 #else
-    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0){
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0){
         throw std::runtime_error("Error to init SDL!");
     }
     GUI gui = GUI();

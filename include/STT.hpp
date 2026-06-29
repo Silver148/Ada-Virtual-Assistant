@@ -16,24 +16,28 @@ class STT{
 
 private:
     VoskModel* model;
-    SDL_AudioDeviceID mic;
+    
     SDL_AudioSpec desiredSpec, obtainedSpec;
+    std::vector<uint8_t> leftoverBuffer;
 
     json MicText;
     std::mutex mtx;
 
 public:
     VoskRecognizer* recognizer;
+    SDL_AudioDeviceID mic;
+    bool isInitializing = false;
 
     STT();
     ~STT();
 
     bool Init();
-    bool ResetMic();
+    bool ReInitMic();
     std::string TextFromMic();
     void PushText(const std::string& raw_json);
     void StartListening();
     void StopListening();
+    void ProcessAudio();
 
 };
 
