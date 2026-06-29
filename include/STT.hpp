@@ -36,7 +36,6 @@ public:
     void PushText(const std::string& raw_json);
     void StartListening();
     void StopListening();
-    void ProcessAudio();
 
 };
 
