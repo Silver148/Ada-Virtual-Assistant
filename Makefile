@@ -48,7 +48,7 @@ ifeq ($(SYSTEM), Windows (MinGW))
     LIBS = 	-static-libgcc, -static-libstdc++ \
 			-L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer \
             -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk \
-			-lmd4c -mconsole -lole32 -lsapi 
+			-lmd4c -mwindows -lole32 -lsapi 
 else
     INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX)
     LIBS = -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
@@ -139,7 +139,7 @@ install_debian_package:
 	sudo apt install ./ada-assistant_$(VERSION)_amd64.deb
 
 clean:
-	@rm -rf $(OBJ_DIR) $(EXE) *.exe
+	@rm -rf $(OBJ_DIR) *.exe Ada
 	@rm -rf md4c/build
 	@rm -rf Ada_packed
 	@rm -f *.deb
