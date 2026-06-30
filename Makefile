@@ -45,7 +45,7 @@ CXXFLAGS = -std=c++17 -Wall -O2
 ifeq ($(SYSTEM), Windows (MinGW))
     INCS = -Icurl/include/ -Iinclude -ISDL2-Mingw/x86_64-w64-mingw32/include -Imd4c/src \
 			-I$(VOSK_WINDOWS)
-    LIBS = 	-static-libgcc, -static-libstdc++ \
+    LIBS = 	-static-libgcc -static-libstdc++ \
 			-L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer \
             -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk \
 			-lmd4c -mwindows -lole32 -lsapi 
