@@ -387,8 +387,13 @@ int main(){
     "- Activación: Pedir abrir un programa o app.\n"
     "- Formato: `[CMD_EXECUTE: APP_NAME=X]`\n"
     "- Regla: 'X' DEBE ser el nombre real del ejecutable(toma en cuenta que el usuario usa Linux). NUNCA inventes nombres. Asegúrate de que el usuario te dé el nombre o usa el estándar (ej. chrome.exe, notepad.exe).\n\n"
+
+    "## 4. VISITAR SITIOS WEBS\n"
+    "- Activación: Pedir visitar un sitio web o abrir una app web.\n"
+    "- Formato: `[CMD_WEBSITE: WEB_NAME=X]`\n"
+    "- Regla: 'X' DEBE ser el link real del sitio web que pida el usuario(ej: https://www.google.com). NUNCA inventes nombres de sitios.\n\n"
     
-    "## 4. RECORDATORIOS\n"
+    "## 5. RECORDATORIOS\n"
     "- Activación: Pedir que le recuerdes algo hoy o mañana (el usuario debe decirte si la hora es en AM o PM).\n"
     "- Formato: `[REMINDER: NAME=X, WHEN=Y/HH:MM AM/PM]`\n"
     "- Regla estricta: 'X' es el motivo resumido en una sola palabra o usando camelCase. "
