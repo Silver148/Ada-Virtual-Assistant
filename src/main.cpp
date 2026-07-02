@@ -188,7 +188,6 @@ int main(){
 
         std::cout << "Please, enter the OpenRouter API Key: ";
         std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         while (API_KEY.empty()) {
             std::getline(std::cin, API_KEY);
