@@ -1,29 +1,19 @@
 {
   "configurations": [
     {
-      "name": "windows-gcc-x64",
+      "name": "${default}",
       "includePath": [
         "${workspaceFolder}/**"
       ],
       "defines": [
-        "__linux__"
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
       ],
-      "compilerPath": "C:/w64devkit/bin/gcc.exe",
-      "cppStandard": "${default}",
-      "intelliSenseMode": "windows-gcc-x64",
-      "cStandard": "${default}"
-    },
-    {
-      "name": "Windows",
-      "includePath": [
-        "${workspaceFolder}/**"
-      ],
-      "defines": [
-        "_WIN32"
-      ],
-      "compilerPath": "C:/w64devkit/bin/g++.exe",
+      "compilerPath": "${default}",
       "cppStandard": "c++17",
-      "intelliSenseMode": "windows-gcc-x64"
+      "cStandard": "c17",
+      "intelliSenseMode": "${default}"
     }
   ],
   "version": 4
