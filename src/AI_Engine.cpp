@@ -43,8 +43,8 @@ void AI_ENGINE::SaveMemories(const std::string &file){
     }
 }
 
-AI_ENGINE::AI_ENGINE(){
-    AI_config["model"] = "google/gemma-4-26b-a4b-it:free";
+AI_ENGINE::AI_ENGINE(const std::string& model){
+    AI_config["model"] = model;
     AI_config["max_tokens"] = 2048;
     AI_config["include_reasoning"] = false;
     AI_config["stream"] = false;

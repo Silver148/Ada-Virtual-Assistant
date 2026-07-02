@@ -808,6 +808,55 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
                                 }
                             }
+       
+                            if(remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") != std::string::npos){
+                                size_t start_lenght = remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") + 23;
+                                size_t end = remoteResponse.find("]", start_lenght);
+
+                                if(end != std::string::npos){
+                                    size_t length = end - start_lenght;
+                                    std::string web_name = remoteResponse.substr(start_lenght, length);
+
+                                #if defined(_WIN32) || defined(_WIN64)
+                                    SHELLEXECUTEINFO sei = {0};
+
+                                    sei.cbSize = sizeof(SHELLEXECUTEINFO);
+                                    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+                                    sei.hwnd = NULL;
+                                    sei.lpVerb = "open";
+                                    sei.lpFile = web_name.c_str();
+                                    sei.nShow = SW_SHOWNORMAL;
+
+                                    if(!ShellExecuteEx(&sei)){
+                                        DWORD error = GetLastError();
+
+                                        std::cout << "Error to open url: " << web_name << " Error: " << error << std::endl;
+                                    }
+                                 #else
+                                    signal(SIGCHLD, SIG_IGN);
+
+                                    pid_t pid = fork();
+
+                                    if(pid < 0){
+                                        perror("Failed to fork process for executing application");
+                                    }else if(pid == 0){
+                                        const char* home_dir = getenv("HOME");
+                                        
+                                        if(home_dir != nullptr){
+                                            if(chdir(home_dir) != 0){
+                                                perror("Failed to change directory");
+                                            }
+                                        }
+
+                                        setsid();
+
+                                        execlp("xdg-open", "xdg-open", web_name.c_str(), NULL);
+
+                                        exit(1);
+                                    }
+                                 #endif
+                                }
+                            }
 
                             if(remoteResponse.rfind("[REMINDER: NAME=") != std::string::npos){
                                 size_t start_lenght = remoteResponse.rfind("[REMINDER: NAME=") + 16;

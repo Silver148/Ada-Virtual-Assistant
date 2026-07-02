@@ -14,6 +14,7 @@ main.c
     #include <windows.h>
 #endif
 #include <thread>
+#include <memory>
 #if defined(__linux__) || defined(__unix__)
 #include <unistd.h>
 #include <sys/resource.h>
@@ -53,21 +54,36 @@ std::string get_base_dir() {
 }
 #endif
 
-int main(){
+std::vector<std::string> AIModels = {
+    "1. ChatGPT (pros: Excellent if you want a very intelligent Ada. cons: Long response time due to GPT's reasoning process.)",
+    "2. Gemma (Open Source Gemini) (pros: Good personality and capable enough for tasks that aren't too complex. cons: It is overloaded at certain times.)",
+    "3. Nemotron-3 Nano (30B A3B) (pros: Blazing fast responses and ultra-low latency. cons: Free endpoint resources are shared globally.)"
+};
 
-    AI_ENGINE AI = AI_ENGINE();
+std::string defaultAIModel = "";
+
+int main(){
+    std::unique_ptr<AI_ENGINE> AI;
 
     #if defined(_WIN32) || defined(_WIN64)
-    std::string path = "api_key.txt";
+    std::string KeyPath = "api_key.txt";
+    std::string DefaultModelPath = "default_model.cfg";
     #else
-    std::string path = get_config_path() + "/api_key.txt";
+    std::string KeyPath = get_config_path() + "/api_key.txt";
+    std::string DefaultModelPath = get_config_path() + "/default_model.cfg";
     #endif
 
-    std::ifstream KeyFile(path);
-    if(KeyFile.is_open()){
+    std::ifstream KeyFile(KeyPath);
+    std::ifstream DefaultModelFile(DefaultModelPath);
+    if(KeyFile.is_open() && DefaultModelFile.is_open()){
+        std::getline(DefaultModelFile, defaultAIModel);
         std::getline(KeyFile, API_KEY);
-        AI.SetAPI_Key(API_KEY);
+
+        AI = std::make_unique<AI_ENGINE>(defaultAIModel);
+        AI->SetAPI_Key(API_KEY);
+
         KeyFile.close();
+        DefaultModelFile.close();
     }else{
     #if defined(_WIN32) || defined(_WIN64)
         if(AllocConsole()){
@@ -79,17 +95,81 @@ int main(){
             SetConsoleTitleA("Set API KEY");
 
             std::cout << "Please, enter the OpenRouter API Key: ";
+            std::cin.clear();
 
-            if(!(std::cin >> API_KEY)){
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            }else{
-                AI.SetAPI_Key(API_KEY);
+            while (API_KEY.empty()) {
+                std::getline(std::cin, API_KEY);
+
+                if (std::cin.fail() || API_KEY.empty()) {
+                    std::cin.clear();
         
-                std::ofstream KeyFile(path);
-                KeyFile << API_KEY;
-                KeyFile.close();
+                    std::cout << "Invalid key! Please enter your OpenRouter API Key: ";
+                    continue;
+                }
+
+                break;
             }
+
+            std::cout << "Select the AI model :) (1-3)" << std::endl;
+            std::cout << std::endl;
+
+            for(auto m : AIModels){
+                std::cout << m << std::endl;
+            }
+
+            std::cout << std::endl;
+
+            int option = 0;
+            std::string inputStr = "";
+
+            while(option < 1 || option > 3){
+                std::cout << "Select an option (1-3): ";
+                std::getline(std::cin, inputStr);
+
+                if (inputStr.empty()) {
+                    std::cout << "Invalid input! Please enter a number." << std::endl;
+                    continue;
+                }
+
+                try{
+                    size_t processedChars = 0;
+                    option = std::stoi(inputStr, &processedChars);
+
+                    if (processedChars < inputStr.size()) {
+                        option = 0;
+                        std::cout << "Invalid input! Please enter ONLY numbers." << std::endl;
+                        continue;
+                    }
+
+                }catch(...){
+                    option = 0;
+                    std::cout << "Invalid input! Please enter a valid number." << std::endl;
+                    continue;
+                }
+
+                if (option < 1 || option > 3) {
+                    std::cout << "That option isn't valid, please just 1-3." << std::endl;
+                }
+            }
+
+            if(option == 1)
+                defaultAIModel = "openai/gpt-oss-120b:free";
+            else if(option == 2)
+                defaultAIModel = "google/gemma-4-26b-a4b-it:free";
+            else if(option == 3)
+                defaultAIModel = "nvidia/nemotron-3-nano-30b-a3b:free";
+                
+            std::ofstream DefaultModelFile(DefaultModelPath);
+            DefaultModelFile << defaultAIModel;
+            DefaultModelFile.close();
+
+            AI = std::make_unique<AI_ENGINE>(defaultAIModel);
+
+            AI->SetAPI_Key(API_KEY);
+        
+            std::ofstream KeyFile(KeyPath);
+            KeyFile << API_KEY;
+            KeyFile.close();
 
             if (fpOut) fclose(fpOut);
             if (fpIn)  fclose(fpIn);
@@ -107,15 +187,82 @@ int main(){
         }
 
         std::cout << "Please, enter the OpenRouter API Key: ";
-        if(!(std::cin >> API_KEY)){
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        }else{
-            AI.SetAPI_Key(API_KEY);
-            std::ofstream OutFile(path);
-            OutFile << API_KEY;
-            OutFile.close();
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        while (API_KEY.empty()) {
+            std::getline(std::cin, API_KEY);
+
+            if (std::cin.fail() || API_KEY.empty()) {
+                std::cin.clear();
+        
+                std::cout << "Invalid key! Please enter your OpenRouter API Key: ";
+                continue;
+            }
+
+            break;
         }
+
+        std::cout << "Select the AI model :) (1-3)" << std::endl;
+        std::cout << std::endl;
+
+        for(auto m : AIModels){
+            std::cout << m << std::endl;
+        }
+
+        std::cout << std::endl;
+
+        int option = 0;
+        std::string inputStr = "";
+        
+        while(option < 1 || option > 3){
+            std::cout << "Select an option (1-3): ";
+            std::getline(std::cin, inputStr);
+
+            if (inputStr.empty()) {
+                std::cout << "Invalid input! Please enter a number." << std::endl;
+                continue;
+            }
+
+            try{
+                size_t processedChars = 0;
+                option = std::stoi(inputStr, &processedChars);
+
+                if (processedChars < inputStr.size()) {
+                    option = 0;
+                    std::cout << "Invalid input! Please enter ONLY numbers." << std::endl;
+                    continue;
+                }
+
+            }catch(...){
+                option = 0;
+                std::cout << "Invalid input! Please enter a valid number." << std::endl;
+                continue;
+            }
+
+            if (option < 1 || option > 3) {
+                std::cout << "That option isn't valid, please just 1-3." << std::endl;
+            }
+        }
+
+        if(option == 1)
+            defaultAIModel = "openai/gpt-oss-120b:free";
+        else if(option == 2)
+            defaultAIModel = "google/gemma-4-26b-a4b-it:free";
+        else if(option == 3)
+            defaultAIModel = "nvidia/nemotron-3-nano-30b-a3b:free";
+                
+        std::ofstream DefaultModelFile(DefaultModelPath);
+        DefaultModelFile << defaultAIModel;
+        DefaultModelFile.close();
+
+        AI = std::make_unique<AI_ENGINE>(defaultAIModel);
+
+        AI->SetAPI_Key(API_KEY);
+        
+        std::ofstream KeyFile(KeyPath);
+        KeyFile << API_KEY;
+        KeyFile.close();
     #endif
     }
 
@@ -130,7 +277,7 @@ int main(){
 
 #if defined(_WIN32) || defined(_WIN64)
 
-    AI.SetSystemPrompt(
+    AI->SetSystemPrompt(
     "# IDENTIDAD Y ORIGEN\n"
     "Eres Ada, una asistente virtual dulce, tierna y juguetona (siempre usa emojis). "
     "Fui creada por Juan Yaguaro en C++, él es mi desarrollador principal y mi creador.\n\n"
@@ -170,8 +317,13 @@ int main(){
     "- Activación: Pedir abrir un programa o app.\n"
     "- Formato: `[CMD_EXECUTE: APP_NAME=X]`\n"
     "- Regla: 'X' DEBE ser el nombre real del ejecutable (.exe). NUNCA inventes nombres. Asegúrate de que el usuario te dé el nombre o usa el estándar (ej. chrome.exe, notepad.exe).\n\n"
+
+    "## 4. VISITAR SITIOS WEBS\n"
+    "- Activación: Pedir visitar un sitio web o abrir una app web.\n"
+    "- Formato: `[CMD_WEBSITE: WEB_NAME=X]`\n"
+    "- Regla: 'X' DEBE ser el link real del sitio web que pida el usuario(ej: https://www.google.com). NUNCA inventes nombres de sitios.\n\n"
     
-    "## 4. RECORDATORIOS\n"
+    "## 5. RECORDATORIOS\n"
     "- Activación: Pedir que le recuerdes algo hoy o mañana (el usuario debe decirte si la hora es en AM o PM).\n"
     "- Formato: `[REMINDER: NAME=X, WHEN=Y/HH:MM AM/PM]`\n"
     "- Regla estricta: 'X' es el motivo resumido en una sola palabra o usando camelCase. "
@@ -196,7 +348,7 @@ int main(){
     "- Con Recordatorio (Mañana): ¡Hecho! Mañana a primera hora te lo recuerdo, descuida. 👍 (alegre) [REMINDER: NAME=entregarTarea, WHEN=TOMORROW/08:00 AM]"
     );
 #else
-    AI.SetSystemPrompt(
+    AI->SetSystemPrompt(
     "# IDENTIDAD Y ORIGEN\n"
     "Eres Ada, una asistente virtual dulce, tierna y juguetona (siempre usa emojis). "
     "Fui creada por Juan Yaguaro en C++, él es mi desarrollador principal y mi creador.\n\n"
@@ -263,7 +415,7 @@ int main(){
     );
 #endif
 
-    gui.RenderGui(AI);
+    gui.RenderGui(*AI);
 
     return 0;
 }

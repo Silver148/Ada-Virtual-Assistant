@@ -19,7 +19,7 @@ private:
 
 public:
 
-    AI_ENGINE();
+    AI_ENGINE(const std::string& model);
 
     void SetSystemPrompt(const std::string &Personalidad);
 
