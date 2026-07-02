@@ -59,6 +59,12 @@ Para iniciar los submodulos(en este caso md4c), ejecuta en la terminal:
  ```bash
  git submodule update --init --recursive
  ```
+---
+
+Si instalaste Ada para distros basadas en Debian(por el paquete .deb), se debe ejecutar desde la terminal con el comando:
+```bash
+ada
+```
 
 ### 📥 Nota sobre los modelos de IA
 
