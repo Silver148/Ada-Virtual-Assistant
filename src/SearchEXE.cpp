@@ -16,7 +16,9 @@ const std::unordered_map<std::string, std::string> KNOWN_APPS = {
     {"taskmgr.exe", "C:\\Windows\\System32\\taskmgr.exe"},
     {"taskmgr", "C:\\Windows\\System32\\taskmgr.exe"},
     {"explorer.exe", "C:\\Windows\\explorer.exe"},
-    {"explorer", "C:\\Windows\\explorer.exe"}
+    {"explorer", "C:\\Windows\\explorer.exe"},
+    {"regedit", "C:\\Windows\\regedit.exe"},
+    {"regedit.exe", "C:\\Windows\\regedit.exe"}
 };
 
 const std::unordered_set<std::string> BLACK_LIST = {

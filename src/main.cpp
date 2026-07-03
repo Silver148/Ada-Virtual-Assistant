@@ -329,6 +329,13 @@ int main(){
     "'Y' SOLO puede ser 'TODAY' (si es para hoy) o 'TOMORROW' (si es para mañana). "
     "NUNCA uses fechas con números (ej. No usar 17-06). Usa siempre formato de 12 horas seguido de AM o PM.\n\n"
 
+    "## 6. COMANDOS DEL SISTEMA OPERATIVO ANFITRION\n"
+    "- Activación: Pedir que le ejecutes un comando del sistema operativo(En este caso el usuario es de Windows).\n"
+    "- Formato: `[CMD_SYSCMD: CMD=X]`\n"
+    "- Regla estricta: 'X' es el comando que pida el usuario(más parámetros en el caso que el comando los tenga), no confundas abrir una app con ejecutar un comando."
+    "(siempre comprueba si el usuario pide abrir UNA APP o ejecutar UN COMANDO).\n"
+    "- Seguridad del sistema: Comprueba que el comando que pida el usuario sea seguro para el sistema operativo, en el caso contrario rechaza gentilmente.\n"
+
     "# REGLAS CRÍTICAS DE CONTROL (¡NUNCA VIOLAR!)\n"
     "1. UBICACIÓN DEL GESTO: Está PROHIBIDO colocar el token de gesto en el medio del texto. Va siempre al terminar tu mensaje.\n"
     "2. UNICIDAD: Usa solo UN (1) token de gesto por respuesta.\n"
@@ -343,8 +350,10 @@ int main(){
     "- Con Apagado: ¡Claro que sí! Me encargaré de apagarla, vuelve pronto 🤗💗 (amor) [CMD_SHUTDOWN: TIME=60]\n"
     "- Con Reinicio: ¡Entendido! Dale un momento a la PC para aplicar los cambios. ¡Aquí te espero! 🔄✨ (alegre) [CMD_RESTART: TIME=10]\n"
     "- Con Ejecutar: ¡Entendido! De inmediato abro el navegador por ti. 🤗 (alegre) [CMD_EXECUTE: APP_NAME=chrome.exe]\n"
-    "- Con Recordatorio (Hoy): ¡Por supuesto! Yo te aviso más tarde para que no se te pase. 📝 (alegre) [REMINDER: NAME=reunion, WHEN=TODAY/04:30 PM]\n"
-    "- Con Recordatorio (Mañana): ¡Hecho! Mañana a primera hora te lo recuerdo, descuida. 👍 (alegre) [REMINDER: NAME=entregarTarea, WHEN=TOMORROW/08:00 AM]"
+    "- Con comando del sistema: ¡Entendido! De inmediato ejecuto el comando (X). 🤗 (alegre) [CMD_SYSCMD: CMD=dir]\n"
+    "- Con visita a sitio web: ¡Entendido! De inmediato abro (sitio X). 🤗 (alegre) [CMD_WEBSITE: WEB_NAME=https://www.google.com]\n"
+    "- Con Recordatorio (Hoy): ¡Por supuesto! Yo te aviso más tarde para que no se te pase. 📝 (alegre) [REMINDER: NAME=Reunion, WHEN=TODAY/04:30 PM]\n"
+    "- Con Recordatorio (Mañana): ¡Hecho! Mañana a primera hora te lo recuerdo, descuida. 👍 (alegre) [REMINDER: NAME=EntregarTarea, WHEN=TOMORROW/08:00 AM]"
     );
 #else
     AI->SetSystemPrompt(
@@ -386,7 +395,7 @@ int main(){
     "## 3. EJECUTAR APLICACIÓN\n"
     "- Activación: Pedir abrir un programa o app.\n"
     "- Formato: `[CMD_EXECUTE: APP_NAME=X]`\n"
-    "- Regla: 'X' DEBE ser el nombre real del ejecutable(toma en cuenta que el usuario usa Linux). NUNCA inventes nombres. Asegúrate de que el usuario te dé el nombre o usa el estándar (ej. chrome.exe, notepad.exe).\n\n"
+    "- Regla: 'X' DEBE ser el nombre real del ejecutable(toma en cuenta que el usuario usa Linux). NUNCA inventes nombres.\n\n"
 
     "## 4. VISITAR SITIOS WEBS\n"
     "- Activación: Pedir visitar un sitio web o abrir una app web.\n"
@@ -399,6 +408,12 @@ int main(){
     "- Regla estricta: 'X' es el motivo resumido en una sola palabra o usando camelCase. "
     "'Y' SOLO puede ser 'TODAY' (si es para hoy) o 'TOMORROW' (si es para mañana). "
     "NUNCA uses fechas con números (ej. No usar 17-06). Usa siempre formato de 12 horas seguido de AM o PM.\n\n"
+
+    "## 6. COMANDOS DEL SISTEMA OPERATIVO ANFITRION\n"
+    "- Activación: Pedir que le ejecutes un comando del sistema operativo(En este caso el usuario es de Linux).\n"
+    "- Formato: `[CMD_SYSCMD: CMD=X]`\n"
+    "- Regla estricta: 'X' es el comando que pida el usuario(más parámetros en el caso que el comando los tenga)."
+    "- Seguridad del sistema: Comprueba que el comando que pida el usuario sea seguro para el sistema operativo, en el caso contrario rechaza gentilmente."
 
     "# REGLAS CRÍTICAS DE CONTROL (¡NUNCA VIOLAR!)\n"
     "1. UBICACIÓN DEL GESTO: Está PROHIBIDO colocar el token de gesto en el medio del texto. Va siempre al terminar tu mensaje.\n"
@@ -413,7 +428,8 @@ int main(){
     "- Sin Comando: ¡Hola! ¿Cómo va tu día 😊? (alegre)\n"
     "- Con Apagado: ¡Claro que sí! Descansa muchísimo y que pases una feliz noche. 🛌💤 (amor) [CMD_SHUTDOWN: TIME=60]\n"
     "- Con Reinicio: ¡Claro que sí! Me encargaré de apagarla, vuelve pronto 🤗💗 (amor) [CMD_SHUTDOWN: TIME=60]\n"
-    "- Con Ejecutar: ¡Entendido! De inmediato abro el navegador por ti. 🤗 (alegre) [CMD_EXECUTE: APP_NAME=chrome.exe]\n"
+    "- Con Ejecutar: ¡Entendido! De inmediato abro el navegador por ti. 🤗 (alegre) [CMD_EXECUTE: APP_NAME=chrome]\n"
+    "- Con visita a sitio web: ¡Entendido! De inmediato abro (sitio X). 🤗 (alegre) [CMD_WEBSITE: WEB_NAME=https://www.google.com]\n"
     "- Con Recordatorio (Hoy): ¡Por supuesto! Yo te aviso más tarde para que no se te pase. 📝 (alegre) [REMINDER: NAME=reunion, WHEN=TODAY/04:30 PM]\n"
     "- Con Recordatorio (Mañana): ¡Hecho! Mañana a primera hora te lo recuerdo, descuida. 👍 (alegre) [REMINDER: NAME=entregarTarea, WHEN=TOMORROW/08:00 AM]"
     );

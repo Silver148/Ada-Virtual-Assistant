@@ -391,6 +391,7 @@ const Uint32 BACKSPACE_DELAY = 50;
 void GUI::RenderGui(AI_ENGINE &AI){
     bool running = true;
     bool fullscreen = false;
+    bool isMinimized = false;
 
     SDL_Rect ResponseArea = { 140, 250, 1000, 350 };
     SDL_Rect UserArea = { 140, 630, 1000, 80 };
@@ -425,6 +426,17 @@ void GUI::RenderGui(AI_ENGINE &AI){
         while(SDL_PollEvent(&e)){
             if(e.type == SDL_QUIT){
                 running = false;
+            }
+
+            if (e.type == SDL_WINDOWEVENT) {
+                switch (e.window.event) {
+                    case SDL_WINDOWEVENT_MINIMIZED:
+                        isMinimized = true;
+                    break;
+                    case SDL_WINDOWEVENT_RESTORED:
+                        isMinimized = false;
+                    break;
+                }
             }
 
             else if (e.type == SDL_MOUSEMOTION) {
@@ -836,6 +848,51 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
                                 }
                             }
+
+                            if(remoteResponse.rfind("[CMD_SYSCMD: CMD=") != std::string::npos){
+                                size_t start_lenght = remoteResponse.rfind("[CMD_SYSCMD: CMD=") + 17;
+                                size_t end = remoteResponse.find("]", start_lenght);
+
+                                if(end != std::string::npos){
+                                    size_t length = end - start_lenght;
+                                    std::string cmd = remoteResponse.substr(start_lenght, length);
+
+                                #if defined(_WIN32) || defined(_WIN64)
+                                    std::thread SYSCMD([cmd, this](){
+                                        if(AllocConsole()){
+
+                                            std::lock_guard<std::mutex> lock(this->mutexConsole);
+
+                                            FILE* fpIn = nullptr;
+                                            FILE* fpOut = nullptr;
+                                            freopen_s(&fpOut, "CONOUT$", "w", stdout);
+                                            freopen_s(&fpIn, "CONIN$", "r", stdin);
+
+                                            std::string windowName = cmd + " Output";
+                                            SetConsoleTitleA(windowName.c_str());
+
+                                            system(cmd.c_str());
+
+                                            system("pause");
+
+                                            if (fpOut) fclose(fpOut);
+                                            if (fpIn)  fclose(fpIn);
+
+                                            freopen_s(&fpOut, "NUL", "w", stdout);
+                                            freopen_s(&fpIn, "NUL", "r", stdin);
+
+                                            FreeConsole(); 
+                                        }
+                                    });
+
+                                    SYSCMD.detach();
+                                    
+                                #else
+                                    std::string backgroundCmd = cmd + " &";
+                                    system(backgroundCmd.c_str());
+                                #endif
+                                }
+                            }
        
                             if(remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") != std::string::npos){
                                 size_t start_lenght = remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") + 23;
@@ -1003,233 +1060,234 @@ void GUI::RenderGui(AI_ENGINE &AI){
             MakeResponseTexture(ResponseArea);
         }
 
-        SDL_SetRenderDrawColor(renderer, 244, 226, 198, 255);
+        if(!isMinimized){
+            SDL_SetRenderDrawColor(renderer, 244, 226, 198, 255);
 
-        SDL_RenderClear(renderer);
+            SDL_RenderClear(renderer);
 
-        SDL_RenderCopy(renderer, Ada_SpriteSheet_texture, &Ada_src_rect, &Ada_dest_rect);
+            SDL_RenderCopy(renderer, Ada_SpriteSheet_texture, &Ada_src_rect, &Ada_dest_rect);
 
-        //Reponse area and user area
-        SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
-        SDL_RenderDrawRect(renderer, &ResponseArea);
-        SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
-        SDL_RenderDrawRect(renderer, &UserArea);
+            //Reponse area and user area
+            SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
+            SDL_RenderDrawRect(renderer, &ResponseArea);
+            SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
+            SDL_RenderDrawRect(renderer, &UserArea);
 
-        //Copy button
-        if (mx >= CopyButton.x && mx <= (CopyButton.x + CopyButton.w) &&
-            my >= CopyButton.y && my <= (CopyButton.y + CopyButton.h)) {
-            SDL_SetRenderDrawColor(renderer, 170, 160, 140, 255);
-        } else {
-            SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
-        }
-        SDL_RenderFillRect(renderer, &CopyButton);  
+            //Copy button
+            if (mx >= CopyButton.x && mx <= (CopyButton.x + CopyButton.w) &&
+                my >= CopyButton.y && my <= (CopyButton.y + CopyButton.h)) {
+                SDL_SetRenderDrawColor(renderer, 170, 160, 140, 255);
+            } else {
+                SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
+            }
+            SDL_RenderFillRect(renderer, &CopyButton);  
 
-        int CopyTextW = 0, CopyTextH = 0;
-        SDL_QueryTexture(CopyTexture, NULL, NULL, &CopyTextW, &CopyTextH );
+            int CopyTextW = 0, CopyTextH = 0;
+            SDL_QueryTexture(CopyTexture, NULL, NULL, &CopyTextW, &CopyTextH );
 
-        CopyRect.x = CopyButton.x + (CopyButton.w - CopyTextW) / 2;
-        CopyRect.y = CopyButton.y + (CopyButton.h - CopyTextH) / 2;
-        CopyRect.w = CopyTextW;
-        CopyRect.h = CopyTextH;
+            CopyRect.x = CopyButton.x + (CopyButton.w - CopyTextW) / 2;
+            CopyRect.y = CopyButton.y + (CopyButton.h - CopyTextH) / 2;
+            CopyRect.w = CopyTextW;
+            CopyRect.h = CopyTextH;
 
-        SDL_RenderCopy(renderer, CopyTexture, NULL, &CopyRect);
+            SDL_RenderCopy(renderer, CopyTexture, NULL, &CopyRect);
 
-        SDL_SetRenderDrawColor(renderer, 43, 43, 43, 255);
-        SDL_RenderDrawRect(renderer, &CopyButton);
+            SDL_SetRenderDrawColor(renderer, 43, 43, 43, 255);
+            SDL_RenderDrawRect(renderer, &CopyButton);
 
-        //Voice button
-        if(VoiceIsActive){
-            SDL_SetRenderDrawColor(renderer, 152, 251, 152, 255);
-        }else{
-            SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
-        }
-        SDL_RenderFillRect(renderer, &VoiceButton);
+            //Voice button
+            if(VoiceIsActive){
+                SDL_SetRenderDrawColor(renderer, 152, 251, 152, 255);
+            }else{
+                SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
+            }
+            SDL_RenderFillRect(renderer, &VoiceButton);
 
-        int TextVoiceButtonW = 0, TextVoiceButtonH = 0;
-        SDL_QueryTexture(TextVoiceButton_tex, NULL, NULL, &TextVoiceButtonW, &TextVoiceButtonH);
+            int TextVoiceButtonW = 0, TextVoiceButtonH = 0;
+            SDL_QueryTexture(TextVoiceButton_tex, NULL, NULL, &TextVoiceButtonW, &TextVoiceButtonH);
 
-        TextVoiceButton.x = VoiceButton.x + (VoiceButton.w - TextVoiceButtonW) / 2;
-        TextVoiceButton.y = VoiceButton.y + (VoiceButton.h - TextVoiceButtonH) / 2;
-        TextVoiceButton.w = TextVoiceButtonW;
-        TextVoiceButton.h = TextVoiceButtonH;
+            TextVoiceButton.x = VoiceButton.x + (VoiceButton.w - TextVoiceButtonW) / 2;
+            TextVoiceButton.y = VoiceButton.y + (VoiceButton.h - TextVoiceButtonH) / 2;
+            TextVoiceButton.w = TextVoiceButtonW;
+            TextVoiceButton.h = TextVoiceButtonH;
 
-        SDL_RenderCopy(renderer, TextVoiceButton_tex, NULL, &TextVoiceButton);
+            SDL_RenderCopy(renderer, TextVoiceButton_tex, NULL, &TextVoiceButton);
 
-        SDL_SetRenderDrawColor(renderer, 43, 43, 43, 255);
-        SDL_RenderDrawRect(renderer, &VoiceButton);
+            SDL_SetRenderDrawColor(renderer, 43, 43, 43, 255);
+            SDL_RenderDrawRect(renderer, &VoiceButton);
 
-        // Cut with clip rect (Hides anything that overflows the text box)
-        if (!lineTextures.empty()) {
-            SDL_Rect clipRegion = { ResponseArea.x + 10, ResponseArea.y + 10, ResponseArea.w - 20, ResponseArea.h - 20 };
-            SDL_RenderSetClipRect(renderer, &clipRegion);
+            // Cut with clip rect (Hides anything that overflows the text box)
+            if (!lineTextures.empty()) {
+                SDL_Rect clipRegion = { ResponseArea.x + 10, ResponseArea.y + 10, ResponseArea.w - 20, ResponseArea.h - 20 };
+                SDL_RenderSetClipRect(renderer, &clipRegion);
 
-            //Draw lines
-            for (size_t i = 0; i < lineTextures.size(); ++i) {
-                if (lineTextures[i] != nullptr) {
-                    SDL_Rect currentRenderRect = lineRects[i];
-                    currentRenderRect.y -= scrollY; //Global scroll
+                //Draw lines
+                for (size_t i = 0; i < lineTextures.size(); ++i) {
+                    if (lineTextures[i] != nullptr) {
+                        SDL_Rect currentRenderRect = lineRects[i];
+                        currentRenderRect.y -= scrollY; //Global scroll
 
-                    SDL_RenderCopy(renderer, lineTextures[i], NULL, &currentRenderRect);
+                        SDL_RenderCopy(renderer, lineTextures[i], NULL, &currentRenderRect);
+                    }
+                }
+
+                SDL_RenderSetClipRect(renderer, NULL);
+            }
+
+            /*CODE FOR USER AREA AND TEXT CURSOR ;)*/
+            SDL_Rect userClipRegion = { UserArea.x + 10, UserArea.y + 10, UserArea.w - 20, UserArea.h - 20 };
+            SDL_RenderSetClipRect(renderer, &userClipRegion);
+        
+            if(!UserText.empty() && UserTextTexture != nullptr) {
+
+                SDL_Rect currentMinInputRect = UserTextRect;
+                currentMinInputRect.y -= userScrollY; //Dynamic scroll
+
+                SDL_RenderCopy(renderer, UserTextTexture, NULL, &currentMinInputRect);
+
+            }
+
+            if (cursorIndex > UserText.length()) {
+                cursorIndex = UserText.length();
+            }
+
+            if (cursorIndex > 0) {
+                while (cursorIndex > 0 && (static_cast<unsigned char>(UserText[cursorIndex]) & 0xC0) == 0x80) {
+                    cursorIndex--;
                 }
             }
 
-            SDL_RenderSetClipRect(renderer, NULL);
-        }
-
-        /*CODE FOR USER AREA AND TEXT CURSOR ;)*/
-        SDL_Rect userClipRegion = { UserArea.x + 10, UserArea.y + 10, UserArea.w - 20, UserArea.h - 20 };
-        SDL_RenderSetClipRect(renderer, &userClipRegion);
-        
-        if(!UserText.empty() && UserTextTexture != nullptr) {
-
-            SDL_Rect currentMinInputRect = UserTextRect;
-            currentMinInputRect.y -= userScrollY; //Dynamic scroll
-
-            SDL_RenderCopy(renderer, UserTextTexture, NULL, &currentMinInputRect);
-
-        }
-
-        if (cursorIndex > UserText.length()) {
-            cursorIndex = UserText.length();
-        }
-
-        if (cursorIndex > 0) {
-            while (cursorIndex > 0 && (static_cast<unsigned char>(UserText[cursorIndex]) & 0xC0) == 0x80) {
-                cursorIndex--;
-            }
-        }
-
-		/* AUTOMATIC WRAP FOR TEXT CURSOR*/
-		int padding = 20;
-		int fontHeight = 0;
-		bool fontValid = (UserTextFont != nullptr);
-		if (fontValid) {
-			fontHeight = TTF_FontHeight(UserTextFont);
-		} else {
-			std::cerr << "UserTextFont is null, cursor not drawn." << std::endl;
-		}
+		    /* AUTOMATIC WRAP FOR TEXT CURSOR*/
+		    int padding = 20;
+		    int fontHeight = 0;
+		    bool fontValid = (UserTextFont != nullptr);
+		    if (fontValid) {
+			    fontHeight = TTF_FontHeight(UserTextFont);
+		    } else {
+			    std::cerr << "UserTextFont is null, cursor not drawn." << std::endl;
+		    }
 		
-		int lineHeight = fontValid ? TTF_FontLineSkip(UserTextFont) : 0;
-		int maxWidth = UserArea.w - 2 * padding;
-		int currentLineW = 0;
-		int rows = 0;
-		size_t lineStartIndex = 0;
-		int simulatedW = 0;
+		    int lineHeight = fontValid ? TTF_FontLineSkip(UserTextFont) : 0;
+		    int maxWidth = UserArea.w - 2 * padding;
+		    int currentLineW = 0;
+		    int rows = 0;
+		    size_t lineStartIndex = 0;
+		    int simulatedW = 0;
 
-		// Iterate through the text until the cursor position
-		if (fontValid) {
-			for (size_t i = 0; i < cursorIndex; ) {
-				// 1. Manual Line Break
-				if (UserText[i] == '\n') {
-					rows++;
-					i++;
-					lineStartIndex = i; // Reset start of line to after the newline
-					simulatedW = 0;
-					continue;
-				}
+		    // Iterate through the text until the cursor position
+		    if (fontValid) {
+			    for (size_t i = 0; i < cursorIndex; ) {
+				    // 1. Manual Line Break
+				    if (UserText[i] == '\n') {
+					    rows++;
+					    i++;
+					    lineStartIndex = i; // Reset start of line to after the newline
+					    simulatedW = 0;
+					    continue;
+				    }
 
-				// 2. Identify word/chunk
-				size_t nextSpace = UserText.find_first_of(" \n", i);
-				size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
+				    // 2. Identify word/chunk
+				    size_t nextSpace = UserText.find_first_of(" \n", i);
+				    size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
 				
-				// Do not include \n in the chunk measurement
-				if (nextSpace != std::string::npos && nextSpace < cursorIndex && UserText[nextSpace] == '\n') {
-					endOfChunk = nextSpace;
-				}
+				    // Do not include \n in the chunk measurement
+				    if (nextSpace != std::string::npos && nextSpace < cursorIndex && UserText[nextSpace] == '\n') {
+					    endOfChunk = nextSpace;
+				    }
 
-				std::string chunk = UserText.substr(i, endOfChunk - i);
-				int chunkW, chunkH;
-				TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
+				    std::string chunk = UserText.substr(i, endOfChunk - i);
+				    int chunkW, chunkH;
+				    TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
 
-				// 3. Logic to wrap (standard chunk)
-				if (simulatedW + chunkW > maxWidth && simulatedW > 0) {
-					rows++;
-					lineStartIndex = i; // New line starts here
-					simulatedW = 0;
-				}
+				    // 3. Logic to wrap (standard chunk)
+				    if (simulatedW + chunkW > maxWidth && simulatedW > 0) {
+					    rows++;
+					    lineStartIndex = i; // New line starts here
+					    simulatedW = 0;
+				    }
 
-				// 4. Logic for "Big Word" (char-by-char)
-				if (chunkW > maxWidth) {
-					for (size_t j = i; j < endOfChunk; ) {
-						unsigned char c = (unsigned char)UserText[j];
-						int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
-						if (j >= cursorIndex) break;
+				    // 4. Logic for "Big Word" (char-by-char)
+				    if (chunkW > maxWidth) {
+					    for (size_t j = i; j < endOfChunk; ) {
+						    unsigned char c = (unsigned char)UserText[j];
+						    int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
+						    if (j >= cursorIndex) break;
 
-						std::string sub = UserText.substr(j, charLen);
-						int charW, charH;
-						TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+						    std::string sub = UserText.substr(j, charLen);
+						    int charW, charH;
+						    TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
 
-						// Wrap if char exceeds width
-						if (simulatedW + charW > maxWidth && simulatedW > 0) {
-							rows++;
-							lineStartIndex = j; // Update line start to this character
-							simulatedW = 0;
-						}
-						simulatedW += charW;
-						j += charLen;
-					}
-				} else {
-					simulatedW += chunkW;
-				}
-				i = endOfChunk;
-			}
+						    // Wrap if char exceeds width
+						    if (simulatedW + charW > maxWidth && simulatedW > 0) {
+							    rows++;
+							    lineStartIndex = j; // Update line start to this character
+							    simulatedW = 0;
+						    }
+						    simulatedW += charW;
+						    j += charLen;
+					    }
+				    } else {
+					    simulatedW += chunkW;
+				    }
+				    i = endOfChunk;
+			    }
 
-			// Calculate the exact width of the final segment for cursor X
-			std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
-			int dummyH;
-			TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+			    // Calculate the exact width of the final segment for cursor X
+			    std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
+			    int dummyH;
+			    TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
 
-			// Cursor coordinates
-			int cursorX = UserArea.x + padding + currentLineW - 2;
-			int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
+			    // Cursor coordinates
+			    int cursorX = UserArea.x + padding + currentLineW - 2;
+			    int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
 
-			//Draw cursor
-			if ((SDL_GetTicks() / 500) % 2 == 0) {
-				SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
-				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-				SDL_RenderFillRect(renderer, &cursorRect);
-			}
-		}
+			    //Draw cursor
+			    if ((SDL_GetTicks() / 500) % 2 == 0) {
+				    SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
+				    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+				    SDL_RenderFillRect(renderer, &cursorRect);
+			    }
+		    }
 
-		// Break the mask
-		SDL_RenderSetClipRect(renderer, NULL);
-        
-        r.CheckReminders();
+		    // Break the mask
+		    SDL_RenderSetClipRect(renderer, NULL);
 
-        std::string newMicText = stt.TextFromMic();
-        if(isListening && !newMicText.empty())
-        {
-            UserText.insert(cursorIndex, newMicText);
-            cursorIndex += strlen(newMicText.c_str());
+            std::string newMicText = stt.TextFromMic();
+            if(isListening && !newMicText.empty())
+            {
+                UserText.insert(cursorIndex, newMicText);
+                cursorIndex += strlen(newMicText.c_str());
                 
-            if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-            if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+                if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+                if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
 
-            UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
-            UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+                UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+                UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
 
-            UserTextRect.x = UserArea.x + 20;
-            UserTextRect.y = UserArea.y + 20;
-            UserTextRect.w = UserTextSurface->w;
-            UserTextRect.h = UserTextSurface->h;
+                UserTextRect.x = UserArea.x + 20;
+                UserTextRect.y = UserArea.y + 20;
+                UserTextRect.w = UserTextSurface->w;
+                UserTextRect.h = UserTextSurface->h;
 
-            if (UserTextRect.h > (UserArea.h - 40)) {
-                maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                // Auto-scroll
-                userScrollY = maxUserScrollY; 
-            } else {
-                maxUserScrollY = 0;
-                userScrollY = 0;
+                if (UserTextRect.h > (UserArea.h - 40)) {
+                    maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
+                    // Auto-scroll
+                    userScrollY = maxUserScrollY; 
+                } else {
+                    maxUserScrollY = 0;
+                    userScrollY = 0;
+                }
             }
+
+            if (isListening && (SDL_GetTicks() % 1000 < 500)) {
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                DrawFilledCircle(renderer, 1200, 300, 10);
+            }
+        }else{
+            SDL_Delay(100);
         }
 
-        
-        if (isListening && (SDL_GetTicks() % 1000 < 500)) {
-            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-            DrawFilledCircle(renderer, 1200, 300, 10);
-        }
-
+        r.CheckReminders();
         SDL_RenderPresent(renderer);
-
     }
 }

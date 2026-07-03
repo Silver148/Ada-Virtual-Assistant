@@ -8,6 +8,7 @@
 #include <iostream>
 #include <thread>
 #include <md4c.h>
+#include <mutex>
 #include "Reminders.hpp"
 #include "Talk.hpp"
 #include "AI_Engine.hpp"
@@ -95,6 +96,8 @@ private:
 
     STT stt;
     bool isListening = false;
+
+    std::mutex mutexConsole;
     
 public:
 
