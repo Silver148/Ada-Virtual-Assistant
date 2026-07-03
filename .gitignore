@@ -6,3 +6,4 @@ Ada.exe
 *.zip
 *.tar.gz
 *.deb
+.vscode
