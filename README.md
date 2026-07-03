@@ -73,10 +73,16 @@ Este proyecto utiliza Git LFS para los modelos de voz. Si al clonar el repositor
  git lfs pull
  ```
 
-En el caso que no funcione(por la cuota limitada LFS de este repositorio), descarga el [modelo](https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx.json?download=true) con su configuración ejecutando el comando:
+Si el comando anterior falla (por el límite de cuota LFS), descarga manualmente los archivos necesarios con los comandos:
  ```bash
-wget -O "es_AR-daniela-high.onnx.json" "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx.json?download=true"
+# Modelo
+wget -O "bin/piper/es_AR-daniela-high.onnx" "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx?download=true"
  ```
-Luego de eso copia los archivos en la carpeta bin/piper del repositorio
+ ```bash
+# Configuración del modelo
+
+wget -O "bin/piper/es_AR-daniela-high.onnx.json" "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx.json?download=true"
+ ```
+Revisa que los archivos se hayan descargado correctamente en bin/piper
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
