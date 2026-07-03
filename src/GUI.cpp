@@ -742,7 +742,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                     std::thread([time](){
                                         std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
 
-                                        system("sudo /usr/sbin/shutdown -h now");
+                                        system("/sbin/poweroff");
                                     }).detach();
                                 #endif
 
@@ -762,7 +762,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                 #else
                                     std::thread([time](){
                                         std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
-                                        system("sudo /usr/sbin/shutdown -r now");
+                                        system("/sbin/reboot");
                                     }).detach();
                                 #endif
                                 }
