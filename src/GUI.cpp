@@ -19,7 +19,7 @@ GUI::GUI() : voice(), stt(){
         throw std::runtime_error("Error to init SDL, IMG and TTF");
     }
 
-    window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
 
     if(!window){
         throw std::runtime_error("Error to create window");
@@ -95,7 +95,7 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
 
     std::string base = get_base_dir();
 
-    window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
 
     if(!window){
         throw std::runtime_error("Error to create window");
@@ -385,6 +385,9 @@ void DrawFilledCircle(SDL_Renderer* renderer, int x, int y, int radius) {
     }
 }
 
+static Uint32 lastBackspaceTime = 0;
+const Uint32 BACKSPACE_DELAY = 50;
+
 void GUI::RenderGui(AI_ENGINE &AI){
     bool running = true;
     bool fullscreen = false;
@@ -414,6 +417,8 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
     int mx = 0, my = 0;
 
+    SDL_ShowWindow(window);
+
     while(running){
 
         SDL_Event e;
@@ -429,11 +434,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
             //Scroll
             else if (e.type == SDL_MOUSEWHEEL) {
-                int mouseX, mouseY;
-                SDL_GetMouseState(&mouseX, &mouseY);
 
-                if (mouseX >= UserArea.x && mouseX <= (UserArea.x + UserArea.w) &&
-                    mouseY >= UserArea.y && mouseY <= (UserArea.y + UserArea.h)) 
+                if (mx >= UserArea.x && mx <= (UserArea.x + UserArea.w) &&
+                    my >= UserArea.y && my <= (UserArea.y + UserArea.h)) 
                 {
                     if (e.wheel.y > 0) { // Up
                         userScrollY -= 20;
@@ -570,48 +573,73 @@ void GUI::RenderGui(AI_ENGINE &AI){
                         
                 }
 
-                if (e.key.keysym.sym == SDLK_BACKSPACE) {
-                    if (cursorIndex > 0 && !UserText.empty()) {
-        
-                    int start_del = cursorIndex - 1;
+                else if (e.key.keysym.sym == SDLK_BACKSPACE) {
 
-                    while (start_del > 0 && 
-                        static_cast<unsigned char>(UserText[start_del]) >= 128 && 
-                        static_cast<unsigned char>(UserText[start_del]) <= 191) {
-                        start_del--;
+                    Uint32 currentTime = SDL_GetTicks();
+                    if (currentTime - lastBackspaceTime < BACKSPACE_DELAY) { //Ignore if 50 ms have not elapsed
+                        continue;
                     }
+                    lastBackspaceTime = currentTime;
 
-                    UserText.erase(start_del, cursorIndex - start_del);
+                    if (cursorIndex > 0 && !UserText.empty() && cursorIndex <= UserText.length()) {
         
-                    cursorIndex = start_del;
+                        int start_del = cursorIndex - 1;
 
-                    if (!UserText.empty()) {
-                        if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                        if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+                        if (start_del >= static_cast<int>(UserText.length()))  {
+                            start_del = UserText.length() - 1;
+                        }
 
-                        UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
-                        UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+                        while (start_del > 0 && 
+                            static_cast<unsigned char>(UserText[start_del]) >= 128 && 
+                            static_cast<unsigned char>(UserText[start_del]) <= 191) {
+                            start_del--;
+                        }
 
-                        UserTextRect.w = UserTextSurface->w;
-                        UserTextRect.h = UserTextSurface->h;
+                        UserText.erase(start_del, cursorIndex - start_del);
+        
+                        cursorIndex = start_del;
 
-                        if (UserTextRect.h > (UserArea.h - 40)) {
-                            maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                            if (userScrollY > maxUserScrollY) userScrollY = maxUserScrollY;
+                        if (!UserText.empty()) {
+                            if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+                            if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+
+                            UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+                            UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+
+                            UserTextRect.w = UserTextSurface->w;
+                            UserTextRect.h = UserTextSurface->h;
+
+                            if (UserTextRect.h > (UserArea.h - 40)) {
+                                maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
+                                if (userScrollY > maxUserScrollY) userScrollY = maxUserScrollY;
+                            } else {
+                                maxUserScrollY = 0;
+                                userScrollY = 0;
+                            }
                         } else {
+                            if (UserTextTexture != nullptr) {
+                                SDL_DestroyTexture(UserTextTexture);
+                                UserTextTexture = nullptr;
+                            }
                             maxUserScrollY = 0;
                             userScrollY = 0;
-                        }
-                    } else {
+                            cursorIndex = 0;
+                        }   
+                } else if (UserText.empty() || cursorIndex <= 0) {
+                    if (UserText.empty()) {
+                        cursorIndex = 0;
                         if (UserTextTexture != nullptr) {
                             SDL_DestroyTexture(UserTextTexture);
                             UserTextTexture = nullptr;
                         }
-                    maxUserScrollY = 0;
-                    userScrollY = 0;
-                }   
+                        maxUserScrollY = 0;
+                        userScrollY = 0;
+                    }
+                    if (cursorIndex <= 0) {
+                        cursorIndex = 0;
+                    }
+                }
             }
-        }
 
             else if (e.key.keysym.sym == SDLK_LEFT) {
                 if (cursorIndex > 0) {
@@ -1065,96 +1093,106 @@ void GUI::RenderGui(AI_ENGINE &AI){
             cursorIndex = UserText.length();
         }
 
-        std::string textBeforeCursor = UserText.substr(0, cursorIndex);
-
-        /* AUTOMATIC WRAP FOR TEXT CURSOR*/
-        int padding = 20;
-        int fontHeight = 0;
-        if(!UserTextFont){ return; std::cerr << "Font height = 0"; }
-        else { fontHeight = TTF_FontHeight(UserTextFont); }
-        
-        int lineHeight = TTF_FontLineSkip(UserTextFont);
-        int maxWidth = UserArea.w - 2 * padding;
-        int currentLineW = 0;
-        int rows = 0;
-        size_t lineStartIndex = 0;
-        int simulatedW = 0;
-
-        // Iterate through the text until the cursor position
-        for (size_t i = 0; i < cursorIndex; ) {
-            // 1. Manual Line Break
-            if (UserText[i] == '\n') {
-                rows++;
-                i++;
-                lineStartIndex = i; // Reset start of line to after the newline
-                simulatedW = 0;
-                continue;
+        if (cursorIndex > 0) {
+            while (cursorIndex > 0 && (static_cast<unsigned char>(UserText[cursorIndex]) & 0xC0) == 0x80) {
+                cursorIndex--;
             }
-
-            // 2. Identify word/chunk
-            size_t nextSpace = UserText.find_first_of(" \n", i);
-            size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
-            
-            // Do not include \n in the chunk measurement
-            if (nextSpace != std::string::npos && nextSpace < cursorIndex && UserText[nextSpace] == '\n') {
-                endOfChunk = nextSpace;
-            }
-
-            std::string chunk = UserText.substr(i, endOfChunk - i);
-            int chunkW, chunkH;
-            TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
-
-            // 3. Logic to wrap (standard chunk)
-            if (simulatedW + chunkW > maxWidth && simulatedW > 0) {
-                rows++;
-                lineStartIndex = i; // New line starts here
-                simulatedW = 0;
-            }
-
-            // 4. Logic for "Big Word" (char-by-char)
-            if (chunkW > maxWidth) {
-                for (size_t j = i; j < endOfChunk; ) {
-                    unsigned char c = (unsigned char)UserText[j];
-                    int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
-                    if (j >= cursorIndex) break;
-
-                    std::string sub = UserText.substr(j, charLen);
-                    int charW, charH;
-                    TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
-
-                    // Wrap if char exceeds width
-                    if (simulatedW + charW > maxWidth && simulatedW > 0) {
-                        rows++;
-                        lineStartIndex = j; // Update line start to this character
-                        simulatedW = 0;
-                    }
-                    simulatedW += charW;
-                    j += charLen;
-                }
-            } else {
-                simulatedW += chunkW;
-            }
-            i = endOfChunk;
         }
 
-        // Calculate the exact width of the final segment for cursor X
-        std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
-        int dummyH;
-        TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+		/* AUTOMATIC WRAP FOR TEXT CURSOR*/
+		int padding = 20;
+		int fontHeight = 0;
+		bool fontValid = (UserTextFont != nullptr);
+		if (fontValid) {
+			fontHeight = TTF_FontHeight(UserTextFont);
+		} else {
+			std::cerr << "UserTextFont is null, cursor not drawn." << std::endl;
+		}
+		
+		int lineHeight = fontValid ? TTF_FontLineSkip(UserTextFont) : 0;
+		int maxWidth = UserArea.w - 2 * padding;
+		int currentLineW = 0;
+		int rows = 0;
+		size_t lineStartIndex = 0;
+		int simulatedW = 0;
 
-        // Cursor coordinates
-        int cursorX = UserArea.x + padding + currentLineW - 2;
-        int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
+		// Iterate through the text until the cursor position
+		if (fontValid) {
+			for (size_t i = 0; i < cursorIndex; ) {
+				// 1. Manual Line Break
+				if (UserText[i] == '\n') {
+					rows++;
+					i++;
+					lineStartIndex = i; // Reset start of line to after the newline
+					simulatedW = 0;
+					continue;
+				}
 
-        //Draw cursor
-        if ((SDL_GetTicks() / 500) % 2 == 0) {
-            SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-            SDL_RenderFillRect(renderer, &cursorRect);
-        }
+				// 2. Identify word/chunk
+				size_t nextSpace = UserText.find_first_of(" \n", i);
+				size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
+				
+				// Do not include \n in the chunk measurement
+				if (nextSpace != std::string::npos && nextSpace < cursorIndex && UserText[nextSpace] == '\n') {
+					endOfChunk = nextSpace;
+				}
 
-        // Break the mask
-        SDL_RenderSetClipRect(renderer, NULL);
+				std::string chunk = UserText.substr(i, endOfChunk - i);
+				int chunkW, chunkH;
+				TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
+
+				// 3. Logic to wrap (standard chunk)
+				if (simulatedW + chunkW > maxWidth && simulatedW > 0) {
+					rows++;
+					lineStartIndex = i; // New line starts here
+					simulatedW = 0;
+				}
+
+				// 4. Logic for "Big Word" (char-by-char)
+				if (chunkW > maxWidth) {
+					for (size_t j = i; j < endOfChunk; ) {
+						unsigned char c = (unsigned char)UserText[j];
+						int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
+						if (j >= cursorIndex) break;
+
+						std::string sub = UserText.substr(j, charLen);
+						int charW, charH;
+						TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+
+						// Wrap if char exceeds width
+						if (simulatedW + charW > maxWidth && simulatedW > 0) {
+							rows++;
+							lineStartIndex = j; // Update line start to this character
+							simulatedW = 0;
+						}
+						simulatedW += charW;
+						j += charLen;
+					}
+				} else {
+					simulatedW += chunkW;
+				}
+				i = endOfChunk;
+			}
+
+			// Calculate the exact width of the final segment for cursor X
+			std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
+			int dummyH;
+			TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+
+			// Cursor coordinates
+			int cursorX = UserArea.x + padding + currentLineW - 2;
+			int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
+
+			//Draw cursor
+			if ((SDL_GetTicks() / 500) % 2 == 0) {
+				SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
+				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+				SDL_RenderFillRect(renderer, &cursorRect);
+			}
+		}
+
+		// Break the mask
+		SDL_RenderSetClipRect(renderer, NULL);
         
         r.CheckReminders();
 
