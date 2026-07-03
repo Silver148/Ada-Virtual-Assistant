@@ -11,7 +11,8 @@
 * **Motor de IA Avanzado:** Conexión de baja latencia con modelos a través de OpenRouter.
 * **Memoria Persistente:** Historial de conversación guardado localmente en un buffer cíclico (`memories.json`).
 * **Texto a Voz (TTS):** Integración directa con Windows SAPI configurado específicamente con la voz nativa de **Microsoft Sabina**.
-* **Capacidad de controlar tu PC:** Ella puede tanto apagar tu PC, reiniciarla, abrir apps de tu equipo y hacerte recordatorios para hoy o mañana.
+* **Voz a Texto (STT):** La app usa **Vosk** para poder transcribir tu voz a texto, esto con el fin de poder dar prompts por voz y solo dar a Enter para enviar. Para usar esta característica presiona Shift + F1 en la app.
+* **Capacidad de controlar tu PC:** Ella puede tanto apagar tu PC, reiniciarla, abrir apps de tu equipo, ejecutar comandos del sistema y hacerte recordatorios para hoy o mañana.
 * **Gestos**: Ada cambia de gesto dependiendo del tema que hables con ella. Esto es con el objetivo de que la comunicación con ella sea más interactiva
 
 ---
