@@ -17,7 +17,7 @@
 
 ---
 
-## Requisito inicial para utlizar a la asistente 
+## Requisito inicial para utilizar a la asistente 
 
 Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrouter.ai). Para obtenerla haz los siguentes pasos:
 
