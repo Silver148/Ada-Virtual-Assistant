@@ -1,4 +1,4 @@
-VERSION = 1.7.0
+VERSION = 1.7.1
 CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
