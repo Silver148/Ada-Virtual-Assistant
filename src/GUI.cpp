@@ -766,7 +766,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
                             }
 
                             if(remoteResponse.rfind("[CMD_RESTART: TIME=") != std::string::npos){
-                                size_t start_lenght = remoteResponse.rfind("[CMD_RESTART: TIME=") + 23;
+                                size_t start_lenght = remoteResponse.rfind("[CMD_RESTART: TIME=") + 19;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
                                 if(end != std::string::npos){
