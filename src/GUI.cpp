@@ -388,6 +388,9 @@ void DrawFilledCircle(SDL_Renderer* renderer, int x, int y, int radius) {
 static Uint32 lastBackspaceTime = 0;
 const Uint32 BACKSPACE_DELAY = 50;
 
+const int TARGET_FPS = 60;
+const std::chrono::milliseconds FRAME_DURATION(1000 / TARGET_FPS);
+
 void GUI::RenderGui(AI_ENGINE &AI){
     bool running = true;
     bool fullscreen = false;
@@ -421,6 +424,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
     SDL_ShowWindow(window);
 
     while(running){
+        auto frameStart = std::chrono::high_resolution_clock::now();
 
         SDL_Event e;
         while(SDL_PollEvent(&e)){
@@ -1289,5 +1293,12 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
         r.CheckReminders();
         SDL_RenderPresent(renderer);
+
+        auto frameEnd = std::chrono::high_resolution_clock::now();
+        auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
+
+        if (frameTime < FRAME_DURATION) {
+            std::this_thread::sleep_for(FRAME_DURATION - frameTime);
+        }
     }
 }
