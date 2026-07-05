@@ -17,6 +17,8 @@
 #include <SDL2/SDL_mixer.h>
 #include <atomic>
 #include <memory>
+#include <fstream>
+#include <iostream>
 #include "main.hpp"
 #endif
 
@@ -30,9 +32,9 @@
 #if defined(__linux__) || defined(__unix__)
 class PiperBridge {
 private:
-    int writePipe[2]; // Pipe descriptor for writing to Piper's stdin
-    int readPipe; // Pipe descriptor for reading audio data from Piper
-    pid_t piperProcessId;
+    int writePipe[2] = {-1, -1}; // Pipe descriptor for writing to Piper's stdin
+    int readPipe = -1; // Pipe descriptor for reading audio data from Piper
+    pid_t piperProcessId = -1;
     SDL_AudioDeviceID dev;
     std::atomic<bool> isRunning{true};
     std::string modelPath;
@@ -58,6 +60,8 @@ private:
 #else
     std::unique_ptr<PiperBridge> piper;
     SDL_AudioDeviceID dev;
+
+    std::string NormalizeTechnicalTerms(std::string message);
 #endif
 
 public:
