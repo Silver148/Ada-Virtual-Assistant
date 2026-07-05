@@ -9,35 +9,35 @@ GUI.cpp
     #include "SearchEXE.hpp"
     #include <windows.h>
 #endif
+
 #define FRAME_WIDTH 205
 #define FRAME_HEIGHT 200
 
 #if defined(_WIN32) || defined(_WIN64)
-GUI::GUI() : voice(), stt(){
-    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0 || IMG_Init(IMG_INIT_PNG) < 0
-    || TTF_Init() < 0){
+GUI::GUI() : voice(), stt() {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0 || IMG_Init(IMG_INIT_PNG) < 0 || TTF_Init() < 0) {
         throw std::runtime_error("Error to init SDL, IMG and TTF");
     }
 
     window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
 
-    if(!window){
+    if (!window) {
         throw std::runtime_error("Error to create window");
     }
     
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    if(!renderer){
+    if (!renderer) {
         throw std::runtime_error("Error to create renderer");
     }
 
     Ada_SpriteSheet_surface = IMG_Load("Ada_SpriteSheet.png");
 
-    if(Ada_SpriteSheet_surface){
+    if (Ada_SpriteSheet_surface) {
         Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
         SDL_FreeSurface(Ada_SpriteSheet_surface);
         Ada_SpriteSheet_surface = nullptr;
-    }else{
+    } else {
         fprintf(stderr, "Error to render Ada texture");
     }
         
@@ -58,25 +58,25 @@ GUI::GUI() : voice(), stt(){
     CopyFont = TTF_OpenFont(TextFontPath.c_str(), 16);
     TextVoiceButton_font = TTF_OpenFont(TextFontPath.c_str(), 16); 
 
-    if(CopyFont){
+    if (CopyFont) {
         CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
-        if(CopySurface){
+        if (CopySurface) {
             CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
             SDL_FreeSurface(CopySurface);
             CopySurface = nullptr;
-        }else{
+        } else {
             fprintf(stderr, "Error to render 'copy' text\n");
         }
     }
 
-    if(TextVoiceButton_font){
+    if (TextVoiceButton_font) {
         TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
         
-        if(TextVoiceButton_surf){
+        if (TextVoiceButton_surf) {
             TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
             SDL_FreeSurface(TextVoiceButton_surf);
             TextVoiceButton_surf = nullptr;
-        }else{
+        } else {
             fprintf(stderr, "Error to render text 'voice' button\n");
         }    
     }
@@ -89,7 +89,7 @@ GUI::GUI() : voice(), stt(){
 #else
 GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
 
-    if(IMG_Init(IMG_INIT_PNG) < 0 || TTF_Init() < 0){
+    if (IMG_Init(IMG_INIT_PNG) < 0 || TTF_Init() < 0) {
         throw std::runtime_error("Error to init IMG and TTF!");
     }
 
@@ -97,24 +97,24 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
 
     window = SDL_CreateWindow("Ada", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1280, 720, SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE);
 
-    if(!window){
+    if (!window) {
         throw std::runtime_error("Error to create window");
     }
     
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-    if(!renderer){
+    if (!renderer) {
         throw std::runtime_error("Error to create renderer");
     }
 
     std::string SpriteSheetPath = base + "/Ada_SpriteSheet.png";
     Ada_SpriteSheet_surface = IMG_Load(SpriteSheetPath.c_str());
 
-    if(Ada_SpriteSheet_surface){
+    if (Ada_SpriteSheet_surface) {
         Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
         SDL_FreeSurface(Ada_SpriteSheet_surface);
         Ada_SpriteSheet_surface = nullptr;
-    }else{
+    } else {
         fprintf(stderr, "Error to render Ada texture");
     }
         
@@ -136,25 +136,25 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
     CopyFont = TTF_OpenFont(TextFontPath.c_str(), 16);
     TextVoiceButton_font = TTF_OpenFont(TextFontPath.c_str(), 16); 
 
-    if(CopyFont){
+    if (CopyFont) {
         CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
-        if(CopySurface){
+        if (CopySurface) {
             CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
             SDL_FreeSurface(CopySurface);
             CopySurface = nullptr;
-        }else{
+        } else {
             fprintf(stderr, "Error to render 'copy' text\n");
         }
     }
 
-    if(TextVoiceButton_font){
+    if (TextVoiceButton_font) {
         TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
         
-        if(TextVoiceButton_surf){
+        if (TextVoiceButton_surf) {
             TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
             SDL_FreeSurface(TextVoiceButton_surf);
             TextVoiceButton_surf = nullptr;
-        }else{
+        } else {
             fprintf(stderr, "Error to render text 'voice' button\n");
         }    
     }
@@ -167,23 +167,22 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
 #endif
 
 GUI::~GUI() {
-
-    if(Ada_SpriteSheet_texture) {
+    if (Ada_SpriteSheet_texture) {
         SDL_DestroyTexture(Ada_SpriteSheet_texture);
         Ada_SpriteSheet_texture = nullptr;
     }
 
-    if(thinking_texture){
+    if (thinking_texture) {
         SDL_DestroyTexture(thinking_texture);
         thinking_texture = nullptr;
     }
 
-    if(TextVoiceButton_tex){
+    if (TextVoiceButton_tex) {
         SDL_DestroyTexture(TextVoiceButton_tex);
         TextVoiceButton_tex = nullptr;
     }
 
-    if(CopyTexture){
+    if (CopyTexture) {
         SDL_DestroyTexture(CopyTexture);
         CopyTexture = nullptr;
     }
@@ -201,7 +200,6 @@ GUI::~GUI() {
     SDL_Quit();
 }
 
-
 /* PARSER MD4C */
 
 static std::vector<RenderLine>* g_lines = nullptr;
@@ -217,11 +215,9 @@ int cb_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata) {
             MD_BLOCK_H_DETAIL* h_detail = static_cast<MD_BLOCK_H_DETAIL*>(detail);
             if (h_detail->level > 1) currentLine.type = LINE_SUBTITLE;
         }
-    }
-    else if (type == MD_BLOCK_LI) {
+    } else if (type == MD_BLOCK_LI) {
         currentLine.type = LINE_BULLET;
-    }
-    else {
+    } else {
         currentLine.type = LINE_NORMAL;
     }
     return 0;
@@ -288,7 +284,6 @@ void GUI::ProcessAIResponse(const std::string& rawText) {
 }
 
 void GUI::MakeResponseTexture(SDL_Rect ResponseArea) {
-
     for (auto* tex : lineTextures) {
         if (tex && tex != thinking_texture) SDL_DestroyTexture(tex); //Only destroy if tex isn't "thinking_texture" :)
     }
@@ -363,9 +358,8 @@ void GUI::MakeResponseTexture(SDL_Rect ResponseArea) {
     }
 }
 
-/* FUNCS GUI*/
-void GUI::AdaGestures(int id){
-
+/* FUNCS GUI */
+void GUI::AdaGestures(int id) {
     int column = id % 5;
     int row = id / 5;
 
@@ -391,7 +385,7 @@ const Uint32 BACKSPACE_DELAY = 50;
 const int TARGET_FPS = 60;
 const std::chrono::milliseconds FRAME_DURATION(1000 / TARGET_FPS);
 
-void GUI::RenderGui(AI_ENGINE &AI){
+void GUI::RenderGui(AI_ENGINE &AI) {
     bool running = true;
     bool fullscreen = false;
     bool isMinimized = false;
@@ -400,10 +394,10 @@ void GUI::RenderGui(AI_ENGINE &AI){
     SDL_Rect UserArea = { 140, 630, 1000, 80 };
 
     CopyButton = { 
-    ResponseArea.x + ResponseArea.w - 100,
-    ResponseArea.y + ResponseArea.h - 45,
-    80,
-    30
+        ResponseArea.x + ResponseArea.w - 100,
+        ResponseArea.y + ResponseArea.h - 45,
+        80,
+        30
     };
 
     VoiceButton = { 1150, 650, 100, 40 };
@@ -423,94 +417,73 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
     SDL_ShowWindow(window);
 
-    while(running){
+    while (running) {
         auto frameStart = std::chrono::high_resolution_clock::now();
 
         SDL_Event e;
-        while(SDL_PollEvent(&e)){
-            if(e.type == SDL_QUIT){
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
                 running = false;
-            }
-
-            if (e.type == SDL_WINDOWEVENT) {
+            } else if (e.type == SDL_WINDOWEVENT) {
                 switch (e.window.event) {
                     case SDL_WINDOWEVENT_MINIMIZED:
                         isMinimized = true;
-                    break;
+                        break;
                     case SDL_WINDOWEVENT_RESTORED:
                         isMinimized = false;
-                    break;
+                        break;
                 }
-            }
-
-            else if (e.type == SDL_MOUSEMOTION) {
+            } else if (e.type == SDL_MOUSEMOTION) {
                 mx = e.motion.x;
                 my = e.motion.y;
-            }
-
-            //Scroll
-            else if (e.type == SDL_MOUSEWHEEL) {
-
+            } else if (e.type == SDL_MOUSEWHEEL) { //Scroll
                 if (mx >= UserArea.x && mx <= (UserArea.x + UserArea.w) &&
-                    my >= UserArea.y && my <= (UserArea.y + UserArea.h)) 
-                {
+                    my >= UserArea.y && my <= (UserArea.y + UserArea.h)) {
                     if (e.wheel.y > 0) { // Up
                         userScrollY -= 20;
                         if (userScrollY < 0) userScrollY = 0;
-                    }
-                    else if (e.wheel.y < 0) { // Down
+                    } else if (e.wheel.y < 0) { // Down
                         userScrollY += 20;
                         if (userScrollY > maxUserScrollY) userScrollY = maxUserScrollY;
                     }
-                } 
-                else {
+                } else {
                     if (e.wheel.y > 0) { // Up
                         scrollY -= 24;
                         if (scrollY < 0) scrollY = 0;
-                    }
-                    else if (e.wheel.y < 0) { // Down
+                    } else if (e.wheel.y < 0) { // Down
                         scrollY += 24;
                         if (scrollY > maxScrollY) scrollY = maxScrollY;
                     }
                 }
-            }
-
-            else if (e.type == SDL_MOUSEBUTTONDOWN) {
+            } else if (e.type == SDL_MOUSEBUTTONDOWN) {
                 if (e.button.button == SDL_BUTTON_LEFT) { // Clic izquierdo
                     int mouseX = e.button.x;
                     int mouseY = e.button.y;
 
                     if (mouseX >= CopyButton.x && mouseX <= (CopyButton.x + CopyButton.w) &&
-                        mouseY >= CopyButton.y && mouseY <= (CopyButton.y + CopyButton.h)) 
-                    {
+                        mouseY >= CopyButton.y && mouseY <= (CopyButton.y + CopyButton.h)) {
                         if (!this->ResponseText.empty()) {
-                        SDL_SetClipboardText(this->ResponseText.c_str());
-                
+                            SDL_SetClipboardText(this->ResponseText.c_str());
                         }
                     }
 
-                    if(mouseX >= VoiceButton.x && mouseX <= (VoiceButton.x + VoiceButton.w) &&
-                        mouseY >= VoiceButton.y && mouseY <= (VoiceButton.y + VoiceButton.h))
-                    {
-                        if(!VoiceIsActive){
+                    if (mouseX >= VoiceButton.x && mouseX <= (VoiceButton.x + VoiceButton.w) &&
+                        mouseY >= VoiceButton.y && mouseY <= (VoiceButton.y + VoiceButton.h)) {
+                        if (!VoiceIsActive) {
                             VoiceIsActive = true;
-                        }else{
+                        } else {
                             VoiceIsActive = false;
                             voice.ShutUpAda();
                         }
-                            
                     }
                 }
-            }
-
-            else if(e.type == SDL_TEXTINPUT){
-
+            } else if (e.type == SDL_TEXTINPUT) {
                 if (static_cast<unsigned char>(e.text.text[0]) >= 32) {
                     UserText.insert(cursorIndex, e.text.text);
                     cursorIndex += strlen(e.text.text);
                 
-                    if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                    if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+                    if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+                    if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
 
                     UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
                     UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
@@ -522,75 +495,58 @@ void GUI::RenderGui(AI_ENGINE &AI){
 
                     if (UserTextRect.h > (UserArea.h - 40)) {
                         maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                        // Auto-scroll
-                        userScrollY = maxUserScrollY; 
+                        userScrollY = maxUserScrollY; // Auto-scroll
                     } else {
                         maxUserScrollY = 0;
                         userScrollY = 0;
                     }
-
                 }
-            }
+            } else if (e.type == SDL_AUDIODEVICEADDED) {
+                if (stt.mic == 0 && e.adevice.iscapture) {
+                    std::cout << "Mic added. Checking current status: " << stt.mic << std::endl;
+                    std::cout << "Re-initializing microphone..." << std::endl;
 
-            else if(e.type == SDL_AUDIODEVICEADDED){
-                    if(stt.mic == 0 && e.adevice.iscapture){
-                        std::cout << "Mic added. Checking current status: " << stt.mic << std::endl;
-
-                        std::cout << "Re-initializing microphone..." << std::endl;
-
-                        if(stt.ReInitMic()){
-                            if(isListening){
-                                stt.StartListening();
-                            }
-                        }else{
-                            isListening = false;
+                    if (stt.ReInitMic()) {
+                        if (isListening) {
+                            stt.StartListening();
                         }
-                        
+                    } else {
+                        isListening = false;
                     }
                 }
+            } else if (e.type == SDL_AUDIODEVICEREMOVED) {
+                if (e.adevice.iscapture && stt.mic != 0) {
+                    SDL_CloseAudioDevice(stt.mic);
+                    stt.mic = 0;
 
-            else if(e.type == SDL_AUDIODEVICEREMOVED){
-                if (e.adevice.iscapture && stt.mic != 0){
-                        SDL_CloseAudioDevice(stt.mic);
-                        stt.mic = 0;
+                    if (stt.recognizer != nullptr) {
+                        vosk_recognizer_free(stt.recognizer);
+                        stt.recognizer = nullptr; 
+                    }
 
-                        if (stt.recognizer != nullptr) {
-                            vosk_recognizer_free(stt.recognizer);
-                            stt.recognizer = nullptr; 
-                        }
-
-                        isListening = false;
-                        std::cout << "Microphone disconected" << std::endl;
+                    isListening = false;
+                    std::cout << "Microphone disconected" << std::endl;
                 }
-            }
-
-            else if(e.type == SDL_KEYDOWN){
-
+            } else if (e.type == SDL_KEYDOWN) {
                 bool shift = (e.key.keysym.mod & KMOD_SHIFT);
 
-                if(e.key.keysym.sym == SDLK_F1 && shift){
-
-                    if(e.key.repeat == 0){
-                        if(!isListening){
+                if (e.key.keysym.sym == SDLK_F1 && shift) {
+                    if (e.key.repeat == 0) {
+                        if (!isListening) {
                             if (stt.mic == 0) {
                                 stt.ReInitMic();
                             }
 
-                            if(stt.mic != 0){
+                            if (stt.mic != 0) {
                                 stt.StartListening();
                                 isListening = true;
                             }
-
-                        }else{
+                        } else {
                             stt.StopListening();
                             isListening = false;
                         }
                     }
-                        
-                }
-
-                else if (e.key.keysym.sym == SDLK_BACKSPACE) {
-
+                } else if (e.key.keysym.sym == SDLK_BACKSPACE) {
                     Uint32 currentTime = SDL_GetTicks();
                     if (currentTime - lastBackspaceTime < BACKSPACE_DELAY) { //Ignore if 50 ms have not elapsed
                         continue;
@@ -598,21 +554,19 @@ void GUI::RenderGui(AI_ENGINE &AI){
                     lastBackspaceTime = currentTime;
 
                     if (cursorIndex > 0 && !UserText.empty() && cursorIndex <= UserText.length()) {
-        
                         int start_del = cursorIndex - 1;
 
-                        if (start_del >= static_cast<int>(UserText.length()))  {
+                        if (start_del >= static_cast<int>(UserText.length())) {
                             start_del = UserText.length() - 1;
                         }
 
                         while (start_del > 0 && 
-                            static_cast<unsigned char>(UserText[start_del]) >= 128 && 
-                            static_cast<unsigned char>(UserText[start_del]) <= 191) {
+                               static_cast<unsigned char>(UserText[start_del]) >= 128 && 
+                               static_cast<unsigned char>(UserText[start_del]) <= 191) {
                             start_del--;
                         }
 
                         UserText.erase(start_del, cursorIndex - start_del);
-        
                         cursorIndex = start_del;
 
                         if (!UserText.empty()) {
@@ -641,65 +595,55 @@ void GUI::RenderGui(AI_ENGINE &AI){
                             userScrollY = 0;
                             cursorIndex = 0;
                         }   
-                } else if (UserText.empty() || cursorIndex <= 0) {
-                    if (UserText.empty()) {
-                        cursorIndex = 0;
-                        if (UserTextTexture != nullptr) {
-                            SDL_DestroyTexture(UserTextTexture);
-                            UserTextTexture = nullptr;
+                    } else if (UserText.empty() || cursorIndex <= 0) {
+                        if (UserText.empty()) {
+                            cursorIndex = 0;
+                            if (UserTextTexture != nullptr) {
+                                SDL_DestroyTexture(UserTextTexture);
+                                UserTextTexture = nullptr;
+                            }
+                            maxUserScrollY = 0;
+                            userScrollY = 0;
                         }
-                        maxUserScrollY = 0;
-                        userScrollY = 0;
+                        if (cursorIndex <= 0) {
+                            cursorIndex = 0;
+                        }
                     }
-                    if (cursorIndex <= 0) {
-                        cursorIndex = 0;
-                    }
-                }
-            }
-
-            else if (e.key.keysym.sym == SDLK_LEFT) {
-                if (cursorIndex > 0) {
-                    cursorIndex--;
-
-                    while (cursorIndex > 0 && 
-                    (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
-                    static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
+                } else if (e.key.keysym.sym == SDLK_LEFT) {
+                    if (cursorIndex > 0) {
                         cursorIndex--;
-                    }   
-                }
-            }
 
-            else if (e.key.keysym.sym == SDLK_RIGHT) {
-                if (cursorIndex < UserText.length()) {
-                    cursorIndex++;
-                    
-                    while (cursorIndex < UserText.length() && 
-                    (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
-                    static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
+                        while (cursorIndex > 0 && 
+                              (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
+                               static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
+                            cursorIndex--;
+                        }   
+                    }
+                } else if (e.key.keysym.sym == SDLK_RIGHT) {
+                    if (cursorIndex < UserText.length()) {
                         cursorIndex++;
-                    }   
-                }
-            }
-
-                else if(e.key.keysym.sym == SDLK_F11){
-                    if(!fullscreen){
+                        
+                        while (cursorIndex < UserText.length() && 
+                              (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
+                               static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
+                            cursorIndex++;
+                        }   
+                    }
+                } else if (e.key.keysym.sym == SDLK_F11) {
+                    if (!fullscreen) {
                         SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN);
                         fullscreen = true;
-                    }
-                    else{
+                    } else {
                         SDL_SetWindowFullscreen(window, 0);
                         fullscreen = false;
                     }
-                }
-
-                else if(e.key.keysym.sym == SDLK_RETURN && !UserText.empty() && !IsThinking){
-
+                } else if (e.key.keysym.sym == SDLK_RETURN && !UserText.empty() && !IsThinking) {
                     std::string prompt = UserText;
                     UserText = "";
 
                     /*DESTROY IF LINE TEXTURE HAS TEXT*/
-                    for(SDL_Texture* tex : lineTextures){
-                        if(tex && tex != thinking_texture) {
+                    for (SDL_Texture* tex : lineTextures) {
+                        if (tex && tex != thinking_texture) {
                             SDL_DestroyTexture(tex);
                         }
                     }
@@ -723,11 +667,11 @@ void GUI::RenderGui(AI_ENGINE &AI){
                     this->ResponseText = "";
                     this->LastResponse = "";
 
-                    if(UserTextTexture != nullptr) {
+                    if (UserTextTexture != nullptr) {
                         SDL_DestroyTexture(UserTextTexture);
                         UserTextTexture = nullptr;
                     }
-                    if(UserTextSurface != nullptr) {
+                    if (UserTextSurface != nullptr) {
                         SDL_FreeSurface(UserTextSurface);
                         UserTextSurface = nullptr;
                     }
@@ -735,225 +679,206 @@ void GUI::RenderGui(AI_ENGINE &AI){
                     maxUserScrollY = 0;
                     scrollY = 0;
 
-                    std::thread AIThread([&AI, prompt, this](){
+                    std::thread AIThread([&AI, prompt, this]() {
                         #if defined(_WIN32) || defined(_WIN64)
                         ::CoInitializeEx(NULL, COINIT_MULTITHREADED); //For voice thread
                         #endif
 
                         std::string remoteResponse = AI.SendPrompt(prompt);
 
-                        if(!remoteResponse.empty()){
-
-                            if(remoteResponse.rfind("[CMD_SHUTDOWN: TIME=") != std::string::npos){
+                        if (!remoteResponse.empty()) {
+                            if (remoteResponse.rfind("[CMD_SHUTDOWN: TIME=") != std::string::npos) {
                                 size_t start_lenght = remoteResponse.rfind("[CMD_SHUTDOWN: TIME=") + 20;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
-                                if(end != std::string::npos){
+                                if (end != std::string::npos) {
                                     size_t length = end - start_lenght;
                                     std::string time = remoteResponse.substr(start_lenght, length);
-                                #if defined(_WIN32) || defined(_WIN64)
-                                    std::string cmd = "shutdown /s /t " + time;
-                                    system(cmd.c_str());
-                                #else
-                                    std::thread([time](){
-                                        std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
-
-                                        system("/sbin/poweroff");
-                                    }).detach();
-                                #endif
-
+                                    #if defined(_WIN32) || defined(_WIN64)
+                                        std::string cmd = "shutdown /s /t " + time;
+                                        system(cmd.c_str());
+                                    #else
+                                        std::thread([time]() {
+                                            std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
+                                            system("/sbin/poweroff");
+                                        }).detach();
+                                    #endif
                                 }
                             }
 
-                            if(remoteResponse.rfind("[CMD_RESTART: TIME=") != std::string::npos){
+                            if (remoteResponse.rfind("[CMD_RESTART: TIME=") != std::string::npos) {
                                 size_t start_lenght = remoteResponse.rfind("[CMD_RESTART: TIME=") + 19;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
-                                if(end != std::string::npos){
+                                if (end != std::string::npos) {
                                     size_t length = end - start_lenght;
                                     std::string time = remoteResponse.substr(start_lenght, length);
-                                #if defined(_WIN32) || defined(_WIN64)
-                                    std::string cmd = "shutdown /r /t " + time;
-                                    system(cmd.c_str());
-                                #else
-                                    std::thread([time](){
-                                        std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
-                                        system("/sbin/reboot");
-                                    }).detach();
-                                #endif
+                                    #if defined(_WIN32) || defined(_WIN64)
+                                        std::string cmd = "shutdown /r /t " + time;
+                                        system(cmd.c_str());
+                                    #else
+                                        std::thread([time]() {
+                                            std::this_thread::sleep_for(std::chrono::seconds(std::stoi(time)));
+                                            system("/sbin/reboot");
+                                        }).detach();
+                                    #endif
                                 }
                             }
 
                             size_t cmd_pos = remoteResponse.rfind("[CMD_EXECUTE: APP_NAME=");
-                            if(cmd_pos != std::string::npos){
+                            if (cmd_pos != std::string::npos) {
                                 size_t start_lenght = cmd_pos + 23;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
-                                if(end != std::string::npos){
-                                
+                                if (end != std::string::npos) {
                                     size_t length = end - start_lenght;
                                     std::string app_name = remoteResponse.substr(start_lenght, length);
-                                #if defined(_WIN32) || defined(_WIN64)
-                                    if (app_name.find(".exe") != std::string::npos) {
-                                        app_name = app_name.substr(0, app_name.find(".exe") + 4);
-                                    }
-                                    remoteResponse = remoteResponse.substr(0, cmd_pos);
-
-                                    std::thread SearchExeThread([app_name]() {
-                                        SearchExe exe;
-
-                                        std::string app_path = exe.FindExe(app_name);
-                                        std::string formatted_path = "\"" + app_path + "\"";
-                                        std::vector<char> cmdBuffer(formatted_path.begin(), formatted_path.end());
-
-                                        cmdBuffer.push_back('\0');
-                                        char* lpCommandLine = cmdBuffer.data();
-
-                                        STARTUPINFO si;
-                                        PROCESS_INFORMATION pi;
-
-                                        ZeroMemory(&si, sizeof(si));
-                                        si.cb = sizeof(si);
-                                        ZeroMemory(&pi, sizeof(pi));
-
-                                        if (CreateProcessA(NULL, lpCommandLine, NULL, NULL, FALSE, 0, NULL, "C:\\", &si, &pi)) {
-                                            CloseHandle(pi.hProcess);
-                                            CloseHandle(pi.hThread);
+                                    #if defined(_WIN32) || defined(_WIN64)
+                                        if (app_name.find(".exe") != std::string::npos) {
+                                            app_name = app_name.substr(0, app_name.find(".exe") + 4);
                                         }
-                                    });
+                                        remoteResponse = remoteResponse.substr(0, cmd_pos);
 
-                                    SearchExeThread.detach();
-                                #else
-                                    remoteResponse = remoteResponse.substr(0, cmd_pos);
-                                    
-                                    signal(SIGCHLD, SIG_IGN);
+                                        std::thread SearchExeThread([app_name]() {
+                                            SearchExe exe;
+                                            std::string app_path = exe.FindExe(app_name);
+                                            std::string formatted_path = "\"" + app_path + "\"";
+                                            std::vector<char> cmdBuffer(formatted_path.begin(), formatted_path.end());
+                                            cmdBuffer.push_back('\0');
+                                            char* lpCommandLine = cmdBuffer.data();
 
-                                    pid_t pid = fork();
+                                            STARTUPINFO si;
+                                            PROCESS_INFORMATION pi;
 
-                                    if(pid < 0){
-                                        perror("Failed to fork process for executing application");
-                                    }else if(pid == 0){
-                                        const char* home_dir = getenv("HOME");
-                                        
-                                        if(home_dir != nullptr){
-                                            if(chdir(home_dir) != 0){
-                                                perror("Failed to change directory");
+                                            ZeroMemory(&si, sizeof(si));
+                                            si.cb = sizeof(si);
+                                            ZeroMemory(&pi, sizeof(pi));
+
+                                            if (CreateProcessA(NULL, lpCommandLine, NULL, NULL, FALSE, 0, NULL, "C:\\", &si, &pi)) {
+                                                CloseHandle(pi.hProcess);
+                                                CloseHandle(pi.hThread);
                                             }
+                                        });
+
+                                        SearchExeThread.detach();
+                                    #else
+                                        remoteResponse = remoteResponse.substr(0, cmd_pos);
+                                        signal(SIGCHLD, SIG_IGN);
+                                        pid_t pid = fork();
+
+                                        if (pid < 0) {
+                                            perror("Failed to fork process for executing application");
+                                        } else if (pid == 0) {
+                                            const char* home_dir = getenv("HOME");
+                                            
+                                            if (home_dir != nullptr) {
+                                                if (chdir(home_dir) != 0) {
+                                                    perror("Failed to change directory");
+                                                }
+                                            }
+
+                                            setsid();
+                                            char* args[] = {const_cast<char*>(app_name.c_str()), NULL};
+                                            execvp(args[0], args);
+                                            exit(1);
                                         }
-
-                                        setsid();
-
-                                        char* args[] = {const_cast<char*>(app_name.c_str()), NULL};
-                                        execvp(args[0], args);
-
-                                        exit(1);
-                                    }
-                                #endif
-
+                                    #endif
                                 }
                             }
 
-                            if(remoteResponse.rfind("[CMD_SYSCMD: CMD=") != std::string::npos){
+                            if (remoteResponse.rfind("[CMD_SYSCMD: CMD=") != std::string::npos) {
                                 size_t start_lenght = remoteResponse.rfind("[CMD_SYSCMD: CMD=") + 17;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
-                                if(end != std::string::npos){
+                                if (end != std::string::npos) {
                                     size_t length = end - start_lenght;
                                     std::string cmd = remoteResponse.substr(start_lenght, length);
 
-                                #if defined(_WIN32) || defined(_WIN64)
-                                    std::thread SYSCMD([cmd, this](){
-                                        if(AllocConsole()){
+                                    #if defined(_WIN32) || defined(_WIN64)
+                                        std::thread SYSCMD([cmd, this]() {
+                                            if (AllocConsole()) {
+                                                std::lock_guard<std::mutex> lock(this->mutexConsole);
 
-                                            std::lock_guard<std::mutex> lock(this->mutexConsole);
+                                                FILE* fpIn = nullptr;
+                                                FILE* fpOut = nullptr;
+                                                freopen_s(&fpOut, "CONOUT$", "w", stdout);
+                                                freopen_s(&fpIn, "CONIN$", "r", stdin);
 
-                                            FILE* fpIn = nullptr;
-                                            FILE* fpOut = nullptr;
-                                            freopen_s(&fpOut, "CONOUT$", "w", stdout);
-                                            freopen_s(&fpIn, "CONIN$", "r", stdin);
+                                                std::string windowName = cmd + " Output";
+                                                SetConsoleTitleA(windowName.c_str());
 
-                                            std::string windowName = cmd + " Output";
-                                            SetConsoleTitleA(windowName.c_str());
+                                                system(cmd.c_str());
+                                                system("pause");
 
-                                            system(cmd.c_str());
+                                                if (fpOut) fclose(fpOut);
+                                                if (fpIn)  fclose(fpIn);
 
-                                            system("pause");
+                                                freopen_s(&fpOut, "NUL", "w", stdout);
+                                                freopen_s(&fpIn, "NUL", "r", stdin);
 
-                                            if (fpOut) fclose(fpOut);
-                                            if (fpIn)  fclose(fpIn);
+                                                FreeConsole(); 
+                                            }
+                                        });
 
-                                            freopen_s(&fpOut, "NUL", "w", stdout);
-                                            freopen_s(&fpIn, "NUL", "r", stdin);
-
-                                            FreeConsole(); 
-                                        }
-                                    });
-
-                                    SYSCMD.detach();
-                                    
-                                #else
-                                    std::string backgroundCmd = cmd + " &";
-                                    system(backgroundCmd.c_str());
-                                #endif
+                                        SYSCMD.detach();
+                                    #else
+                                        std::string backgroundCmd = cmd + " &";
+                                        system(backgroundCmd.c_str());
+                                    #endif
                                 }
                             }
        
-                            if(remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") != std::string::npos){
+                            if (remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") != std::string::npos) {
                                 size_t start_lenght = remoteResponse.rfind("[CMD_WEBSITE: WEB_NAME=") + 23;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
-                                if(end != std::string::npos){
+                                if (end != std::string::npos) {
                                     size_t length = end - start_lenght;
                                     std::string web_name = remoteResponse.substr(start_lenght, length);
 
-                                #if defined(_WIN32) || defined(_WIN64)
-                                    SHELLEXECUTEINFO sei = {0};
+                                    #if defined(_WIN32) || defined(_WIN64)
+                                        SHELLEXECUTEINFO sei = {0};
+                                        sei.cbSize = sizeof(SHELLEXECUTEINFO);
+                                        sei.fMask = SEE_MASK_NOCLOSEPROCESS;
+                                        sei.hwnd = NULL;
+                                        sei.lpVerb = "open";
+                                        sei.lpFile = web_name.c_str();
+                                        sei.nShow = SW_SHOWNORMAL;
 
-                                    sei.cbSize = sizeof(SHELLEXECUTEINFO);
-                                    sei.fMask = SEE_MASK_NOCLOSEPROCESS;
-                                    sei.hwnd = NULL;
-                                    sei.lpVerb = "open";
-                                    sei.lpFile = web_name.c_str();
-                                    sei.nShow = SW_SHOWNORMAL;
-
-                                    if(!ShellExecuteEx(&sei)){
-                                        DWORD error = GetLastError();
-
-                                        std::cout << "Error to open url: " << web_name << " Error: " << error << std::endl;
-                                    }
-                                 #else
-                                    signal(SIGCHLD, SIG_IGN);
-
-                                    pid_t pid = fork();
-
-                                    if(pid < 0){
-                                        perror("Failed to fork process for executing application");
-                                    }else if(pid == 0){
-                                        const char* home_dir = getenv("HOME");
-                                        
-                                        if(home_dir != nullptr){
-                                            if(chdir(home_dir) != 0){
-                                                perror("Failed to change directory");
-                                            }
+                                        if (!ShellExecuteEx(&sei)) {
+                                            DWORD error = GetLastError();
+                                            std::cout << "Error to open url: " << web_name << " Error: " << error << std::endl;
                                         }
+                                    #else
+                                        signal(SIGCHLD, SIG_IGN);
+                                        pid_t pid = fork();
 
-                                        setsid();
+                                        if (pid < 0) {
+                                            perror("Failed to fork process for executing application");
+                                        } else if (pid == 0) {
+                                            const char* home_dir = getenv("HOME");
+                                            
+                                            if (home_dir != nullptr) {
+                                                if (chdir(home_dir) != 0) {
+                                                    perror("Failed to change directory");
+                                                }
+                                            }
 
-                                        execlp("xdg-open", "xdg-open", web_name.c_str(), NULL);
-
-                                        exit(1);
-                                    }
-                                 #endif
+                                            setsid();
+                                            execlp("xdg-open", "xdg-open", web_name.c_str(), NULL);
+                                            exit(1);
+                                        }
+                                    #endif
                                 }
                             }
 
-                            if(remoteResponse.rfind("[REMINDER: NAME=") != std::string::npos){
+                            if (remoteResponse.rfind("[REMINDER: NAME=") != std::string::npos) {
                                 size_t start_lenght = remoteResponse.rfind("[REMINDER: NAME=") + 16;
                                 size_t end = remoteResponse.find("]", start_lenght);
 
-                                if(end != std::string::npos){
+                                if (end != std::string::npos) {
                                     size_t when_marker = remoteResponse.find(", WHEN=", start_lenght);
-                                    if (when_marker != std::string::npos && when_marker < end){
+                                    if (when_marker != std::string::npos && when_marker < end) {
                                         size_t name_lenght = when_marker - start_lenght;
                                         std::string name = remoteResponse.substr(start_lenght, name_lenght);
 
@@ -966,11 +891,10 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                         if (slash_pos != std::string::npos) {
                                             std::string when_day = when.substr(0, slash_pos);
                                             std::string time_part = when.substr(slash_pos + 1);
-
                                             size_t colon_pos = time_part.find(":");
 
                                             if (colon_pos != std::string::npos) {
-                                                try{
+                                                try {
                                                     std::string str_hour = time_part.substr(0, colon_pos);
                                                     std::string string_end = time_part.substr(colon_pos + 1);
 
@@ -978,9 +902,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                                     int minute = std::stoi(string_end.substr(0, 2));
 
                                                     std::string am_or_pm = "";
-                                                    if(string_end.find("PM") != std::string::npos || string_end.find("pm") != std::string::npos){
+                                                    if (string_end.find("PM") != std::string::npos || string_end.find("pm") != std::string::npos) {
                                                         am_or_pm = "PM";
-                                                    }else if(string_end.find("AM") != std::string::npos || string_end.find("am") != std::string::npos){
+                                                    } else if (string_end.find("AM") != std::string::npos || string_end.find("am") != std::string::npos) {
                                                         am_or_pm = "AM";
                                                     }
                                                     this->r.CreateReminder(name, when_day, hour, minute, am_or_pm);
@@ -992,77 +916,64 @@ void GUI::RenderGui(AI_ENGINE &AI){
                             }
 
                             //Ada Gestures ;)
-                            if(remoteResponse.rfind("(alegre)") != std::string::npos){
+                            if (remoteResponse.rfind("(alegre)") != std::string::npos) {
                                 this->AdaGestures(0);
                                 size_t pos = remoteResponse.find("(alegre)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(sorpresa)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(sorpresa)") != std::string::npos) {
                                 this->AdaGestures(1);
                                 size_t pos = remoteResponse.rfind("(sorpresa)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(tristeza)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(tristeza)") != std::string::npos) {
                                 this->AdaGestures(4);
                                 size_t pos = remoteResponse.rfind("(tristeza)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(amor)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(amor)") != std::string::npos) {
                                 this->AdaGestures(11);
                                 size_t pos = remoteResponse.rfind("(amor)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(explicación)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(explicación)") != std::string::npos) {
                                 this->AdaGestures(10);
                                 size_t pos = remoteResponse.rfind("(explicación)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(festejando)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(festejando)") != std::string::npos) {
                                 this->AdaGestures(6);
                                 size_t pos = remoteResponse.rfind("(festejando)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(preocupación)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(preocupación)") != std::string::npos) {
                                 this->AdaGestures(9);
                                 size_t pos = remoteResponse.rfind("(preocupación)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(tomando en cuenta)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(tomando en cuenta)") != std::string::npos) {
                                 this->AdaGestures(7);
                                 size_t pos = remoteResponse.rfind("(tomando en cuenta)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(negación)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(negación)") != std::string::npos) {
                                 this->AdaGestures(2);
                                 size_t pos = remoteResponse.rfind("(negación)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(risa nerviosa)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(risa nerviosa)") != std::string::npos) {
                                 this->AdaGestures(12);
                                 size_t pos = remoteResponse.rfind("(risa nerviosa)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }
-                            else if(remoteResponse.rfind("(interés)") != std::string::npos){
+                            } else if (remoteResponse.rfind("(interés)") != std::string::npos) {
                                 this->AdaGestures(3);
                                 size_t pos = remoteResponse.rfind("(interés)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
-                            }else if(remoteResponse.find("Modelo de IA saturado") != std::string::npos || 
-                                remoteResponse.find("API Key vencida o inválida") != std::string::npos ||
-                                remoteResponse.find("Limite de contexto superado.") != std::string::npos ||
-                                remoteResponse.find("Error inesperado") != std::string::npos ||
-                                remoteResponse.find("Error de conexión con el servidor.") != std::string::npos){
-
+                            } else if (remoteResponse.find("Modelo de IA saturado") != std::string::npos || 
+                                       remoteResponse.find("API Key vencida o inválida") != std::string::npos ||
+                                       remoteResponse.find("Limite de contexto superado.") != std::string::npos ||
+                                       remoteResponse.find("Error inesperado") != std::string::npos ||
+                                       remoteResponse.find("Error de conexión con el servidor.") != std::string::npos) {
                                 this->AdaGestures(14);  
-
                             }
 
                             this->ResponseText = remoteResponse;
 
-                            if(this->VoiceIsActive){
+                            if (this->VoiceIsActive) {
                                 std::string TalkString = voice.CleanTextForTalk(this->ResponseText);
                                 voice.TalkAda(TalkString);
                             }
-
                         }
                         
                         this->IsThinking = false;
@@ -1088,12 +999,12 @@ void GUI::RenderGui(AI_ENGINE &AI){
             MakeResponseTexture(ResponseArea);
         }
 
-        if(IsThinking && this->ResponseText.empty())
+        if (IsThinking && this->ResponseText.empty()) {
             AdaGestures(5);
+        }
 
-        if(!isMinimized){
+        if (!isMinimized) {
             SDL_SetRenderDrawColor(renderer, 244, 226, 198, 255);
-
             SDL_RenderClear(renderer);
 
             SDL_RenderCopy(renderer, Ada_SpriteSheet_texture, &Ada_src_rect, &Ada_dest_rect);
@@ -1114,7 +1025,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
             SDL_RenderFillRect(renderer, &CopyButton);  
 
             int CopyTextW = 0, CopyTextH = 0;
-            SDL_QueryTexture(CopyTexture, NULL, NULL, &CopyTextW, &CopyTextH );
+            SDL_QueryTexture(CopyTexture, NULL, NULL, &CopyTextW, &CopyTextH);
 
             CopyRect.x = CopyButton.x + (CopyButton.w - CopyTextW) / 2;
             CopyRect.y = CopyButton.y + (CopyButton.h - CopyTextH) / 2;
@@ -1127,9 +1038,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
             SDL_RenderDrawRect(renderer, &CopyButton);
 
             //Voice button
-            if(VoiceIsActive){
+            if (VoiceIsActive) {
                 SDL_SetRenderDrawColor(renderer, 152, 251, 152, 255);
-            }else{
+            } else {
                 SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
             }
             SDL_RenderFillRect(renderer, &VoiceButton);
@@ -1161,7 +1072,6 @@ void GUI::RenderGui(AI_ENGINE &AI){
                         SDL_RenderCopy(renderer, lineTextures[i], NULL, &currentRenderRect);
                     }
                 }
-
                 SDL_RenderSetClipRect(renderer, NULL);
             }
 
@@ -1169,13 +1079,10 @@ void GUI::RenderGui(AI_ENGINE &AI){
             SDL_Rect userClipRegion = { UserArea.x + 10, UserArea.y + 10, UserArea.w - 20, UserArea.h - 20 };
             SDL_RenderSetClipRect(renderer, &userClipRegion);
         
-            if(!UserText.empty() && UserTextTexture != nullptr) {
-
+            if (!UserText.empty() && UserTextTexture != nullptr) {
                 SDL_Rect currentMinInputRect = UserTextRect;
                 currentMinInputRect.y -= userScrollY; //Dynamic scroll
-
                 SDL_RenderCopy(renderer, UserTextTexture, NULL, &currentMinInputRect);
-
             }
 
             if (cursorIndex > UserText.length()) {
@@ -1188,144 +1095,146 @@ void GUI::RenderGui(AI_ENGINE &AI){
                 }
             }
 
-		    /* AUTOMATIC WRAP FOR TEXT CURSOR*/
-		    int padding = 20;
-		    int fontHeight = 0;
-		    bool fontValid = (UserTextFont != nullptr);
-		    if (fontValid) {
-			    fontHeight = TTF_FontHeight(UserTextFont);
-		    } else {
-			    std::cerr << "UserTextFont is null, cursor not drawn." << std::endl;
-		    }
-		
-		    int lineHeight = fontValid ? TTF_FontLineSkip(UserTextFont) : 0;
-		    int maxWidth = UserArea.w - 2 * padding;
-		    int currentLineW = 0;
-		    int rows = 0;
-		    size_t lineStartIndex = 0;
-		    int simulatedW = 0;
+            /* AUTOMATIC WRAP FOR TEXT CURSOR*/
+            int padding = 20;
+            int fontHeight = 0;
+            bool fontValid = (UserTextFont != nullptr);
+            
+            if (fontValid) {
+                fontHeight = TTF_FontHeight(UserTextFont);
+            } else {
+                std::cerr << "UserTextFont is null, cursor not drawn." << std::endl;
+            }
 
-		    // Iterate through the text until the cursor position
-		    if (fontValid) {
-			    for (size_t i = 0; i < cursorIndex; ) {
-				    // 1. Manual Line Break
-				    if (UserText[i] == '\n') {
-					    rows++;
-					    i++;
-					    lineStartIndex = i; // Reset start of line to after the newline
-					    simulatedW = 0;
-					    continue;
-				    }
+            int lineHeight = fontValid ? TTF_FontLineSkip(UserTextFont) : 0;
+            int maxWidth = UserArea.w - 2 * padding;
+            int currentLineW = 0;
+            int rows = 0;
+            size_t lineStartIndex = 0;
+            int simulatedW = 0;
 
-				    // 2. Identify word/chunk
-				    size_t nextSpace = UserText.find_first_of(" \n", i);
-				    size_t endOfChunk = (nextSpace == std::string::npos || nextSpace >= cursorIndex) ? cursorIndex : nextSpace + 1;
-				
-				    // Do not include \n in the chunk measurement
-				    if (nextSpace != std::string::npos && nextSpace < cursorIndex && UserText[nextSpace] == '\n') {
-					    endOfChunk = nextSpace;
-				    }
+            if (fontValid) {
+                size_t i = 0;
+                while (i < cursorIndex) {
+                    if (UserText[i] == '\n') {
+                        rows++;
+                        i++;
+                        lineStartIndex = i; 
+                        simulatedW = 0;
+                        continue;
+                    }
 
-				    std::string chunk = UserText.substr(i, endOfChunk - i);
-				    int chunkW, chunkH;
-				    TTF_SizeUTF8(UserTextFont, chunk.c_str(), &chunkW, &chunkH);
+                    if (UserText[i] == ' ') {
+                        int spaceW, spaceH;
+                        TTF_SizeUTF8(UserTextFont, " ", &spaceW, &spaceH);
 
-				    // 3. Logic to wrap (standard chunk)
-				    if (simulatedW + chunkW > maxWidth && simulatedW > 0) {
-					    rows++;
-					    lineStartIndex = i; // New line starts here
-					    simulatedW = 0;
-				    }
+                        if (simulatedW + spaceW > maxWidth && simulatedW > 0) {
+                            rows++;
+                            lineStartIndex = i; 
+                            simulatedW = 0;
+                        } else {
+                            simulatedW += spaceW;
+                        }
+                        i++;
+                        continue;
+                    }
 
-				    // 4. Logic for "Big Word" (char-by-char)
-				    if (chunkW > maxWidth) {
-					    for (size_t j = i; j < endOfChunk; ) {
-						    unsigned char c = (unsigned char)UserText[j];
-						    int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
-						    if (j >= cursorIndex) break;
+                    size_t nextDelimiter = UserText.find_first_of(" \n", i);
+                    size_t endOfWord = (nextDelimiter == std::string::npos || nextDelimiter >= cursorIndex) ? cursorIndex : nextDelimiter;
 
-						    std::string sub = UserText.substr(j, charLen);
-						    int charW, charH;
-						    TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+                    std::string word = UserText.substr(i, endOfWord - i);
+                    int wordW, wordH;
+                    TTF_SizeUTF8(UserTextFont, word.c_str(), &wordW, &wordH);
 
-						    // Wrap if char exceeds width
-						    if (simulatedW + charW > maxWidth && simulatedW > 0) {
-							    rows++;
-							    lineStartIndex = j; // Update line start to this character
-							    simulatedW = 0;
-						    }
-						    simulatedW += charW;
-						    j += charLen;
-					    }
-				    } else {
-					    simulatedW += chunkW;
-				    }
-				    i = endOfChunk;
-			    }
+                    if (simulatedW + wordW <= maxWidth) {
+                        simulatedW += wordW;
+                        i = endOfWord;
+                    } else if (wordW <= maxWidth) {
+                        rows++;
+                        lineStartIndex = i; 
+                        simulatedW = wordW;
+                        i = endOfWord;
+                    } else {
+                        while (i < endOfWord) {
+                            unsigned char c = (unsigned char)UserText[i];
+                            int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
+                            if (i >= cursorIndex) break;
 
-			    // Calculate the exact width of the final segment for cursor X
-			    std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
-			    int dummyH;
-			    TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+                            std::string sub = UserText.substr(i, charLen);
+                            int charW, charH;
+                            TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
 
-			    // Cursor coordinates
-			    int cursorX = UserArea.x + padding + currentLineW - 2;
-			    int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
+                            if (simulatedW + charW > maxWidth && simulatedW > 0) {
+                                rows++;
+                                lineStartIndex = i; 
+                                simulatedW = 0;
+                            }
 
-			    //Draw cursor
-			    if ((SDL_GetTicks() / 500) % 2 == 0) {
-				    SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
-				    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
-				    SDL_RenderFillRect(renderer, &cursorRect);
-			    }
-		    }
+                            simulatedW += charW;
+                            i += charLen;
+                        }
+                    }
+                }
 
-		    // Break the mask
-		    SDL_RenderSetClipRect(renderer, NULL);
+                if (cursorIndex > lineStartIndex) {
+                    std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
+                    int dummyH;
+                    TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+                }
 
-            std::string newMicText = stt.TextFromMic();
-            if(isListening && !newMicText.empty())
-            {
-                UserText.insert(cursorIndex, newMicText);
-                cursorIndex += strlen(newMicText.c_str());
-                
-                if(UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                if(UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+                int cursorX = UserArea.x + padding + currentLineW - 2;
+                int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
 
-                UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
-                UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+                if ((SDL_GetTicks() / 500) % 2 == 0) {
+                    SDL_Rect cursorRect = { cursorX, cursorY, 2, fontHeight };
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); 
+                    SDL_RenderFillRect(renderer, &cursorRect);
+                }
 
-                UserTextRect.x = UserArea.x + 20;
-                UserTextRect.y = UserArea.y + 20;
-                UserTextRect.w = UserTextSurface->w;
-                UserTextRect.h = UserTextSurface->h;
+                SDL_RenderSetClipRect(renderer, NULL);
 
-                if (UserTextRect.h > (UserArea.h - 40)) {
-                    maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                    // Auto-scroll
-                    userScrollY = maxUserScrollY; 
-                } else {
-                    maxUserScrollY = 0;
-                    userScrollY = 0;
+                std::string newMicText = stt.TextFromMic();
+                if (isListening && !newMicText.empty()) {
+                    UserText.insert(cursorIndex, newMicText);
+                    cursorIndex += strlen(newMicText.c_str());
+                    
+                    if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+                    if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+
+                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+                    UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+
+                    UserTextRect.x = UserArea.x + 20;
+                    UserTextRect.y = UserArea.y + 20;
+                    UserTextRect.w = UserTextSurface->w;
+                    UserTextRect.h = UserTextSurface->h;
+
+                    if (UserTextRect.h > (UserArea.h - 40)) {
+                        maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
+                        userScrollY = maxUserScrollY; 
+                    } else {
+                        maxUserScrollY = 0;
+                        userScrollY = 0;
+                    }
+                }
+
+                if (isListening && (SDL_GetTicks() % 1000 < 500)) {
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+                    DrawFilledCircle(renderer, 1200, 300, 10);
                 }
             }
 
-            if (isListening && (SDL_GetTicks() % 1000 < 500)) {
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                DrawFilledCircle(renderer, 1200, 300, 10);
+            r.CheckReminders();
+            SDL_RenderPresent(renderer);
+
+            auto frameEnd = std::chrono::high_resolution_clock::now();
+            auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
+
+            if (frameTime < FRAME_DURATION) {
+                std::this_thread::sleep_for(FRAME_DURATION - frameTime);
             }
-        }else{
+        } else {
             SDL_Delay(100);
-        }
-
-        r.CheckReminders();
-        SDL_RenderPresent(renderer);
-
-        auto frameEnd = std::chrono::high_resolution_clock::now();
-        auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
-
-        if (frameTime < FRAME_DURATION) {
-            std::this_thread::sleep_for(FRAME_DURATION - frameTime);
         }
     }
 }

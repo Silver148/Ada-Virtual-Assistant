@@ -32,7 +32,7 @@ bool PiperBridge::StartPiper() {
         execl(piper_path.c_str(), piper_path.c_str(),
             "--model", modelPath.c_str(),
             "--output-raw",
-            "--length-scale", "1.0", 
+            "--length-scale", "1.4", 
             "--threads", "2", 
             "--noise-scale", "0.0",
             "--noise-w", "0.0",

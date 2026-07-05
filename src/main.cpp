@@ -63,6 +63,14 @@ std::vector<std::string> AIModels = {
 std::string defaultAIModel = "";
 
 int main(){
+
+    #if defined(__linux__) || defined(__unix__)
+        if (!isatty(fileno(stdin))) {
+            system("x-terminal-emulator -e \"./Ada\" &");
+            exit(0);
+        }
+    #endif
+    
     std::unique_ptr<AI_ENGINE> AI;
 
     #if defined(_WIN32) || defined(_WIN64)
@@ -180,11 +188,6 @@ int main(){
             FreeConsole(); 
         }
     #else
-
-        if (!isatty(fileno(stdin))) {
-            system("x-terminal-emulator -e \"./Ada\" &");
-            exit(0);
-        }
 
         std::cout << "Please, enter the OpenRouter API Key: ";
         std::cin.clear();
