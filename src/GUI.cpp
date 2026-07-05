@@ -1080,7 +1080,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
             MakeResponseTexture(ResponseArea);
         }
 
-        if(IsThinking)
+        if(IsThinking && this->ResponseText.empty())
             AdaGestures(5);
 
         if(!isMinimized){
