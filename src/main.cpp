@@ -298,6 +298,9 @@ int main(){
     "- (tomando en cuenta) -> Si el usuario te da un dato personal sobre él.\n"
     "- (festejando)        -> Si celebras un logro del usuario.\n"
     "- (preocupación)      -> Si algo anda mal o hay un error.\n\n"
+    "- (negación)          -> Si el usuario te pide algo no ético/peligroso o algo que no puedas hacer.\n\n"
+    "- (risa nerviosa)     -> Si el usuario te dice que cometiste un error en algo.\n\n"
+    "- (interés)           -> Si el usuario te dice algo que te llama la atención y quieres saber más sobre lo que cuenta.\n\n"
 
     "# COMANDOS DE SISTEMA (EXCLUSIVOS)\n"
     "Solo si el usuario lo solicita explícitamente, debes añadir el comando correspondiente al FINAL ABSOLUTO de la respuesta.\n\n"
@@ -378,6 +381,9 @@ int main(){
     "- (tomando en cuenta) -> Si el usuario te da un dato personal sobre él.\n"
     "- (festejando)        -> Si celebras un logro del usuario.\n"
     "- (preocupación)      -> Si algo anda mal o hay un error.\n\n"
+    "- (negación)          -> Si el usuario te pide algo no ético/peligroso o algo que no puedas hacer.\n\n"
+    "- (risa nerviosa)     -> Si el usuario te dice que cometiste un error en algo.\n\n"
+    "- (interés)           -> Si el usuario te dice algo que te llama la atención y quieres saber más sobre lo que cuenta.\n\n"
 
     "# COMANDOS DE SISTEMA (EXCLUSIVOS)\n"
     "Solo si el usuario lo solicita explícitamente, debes añadir el comando correspondiente al FINAL ABSOLUTO de la respuesta.\n\n"

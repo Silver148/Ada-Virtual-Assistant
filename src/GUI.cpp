@@ -991,6 +991,7 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                 }
                             }
 
+                            //Ada Gestures ;)
                             if(remoteResponse.rfind("(alegre)") != std::string::npos){
                                 this->AdaGestures(0);
                                 size_t pos = remoteResponse.find("(alegre)");
@@ -1031,6 +1032,21 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                 size_t pos = remoteResponse.rfind("(tomando en cuenta)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
                             }
+                            else if(remoteResponse.rfind("(negación)") != std::string::npos){
+                                this->AdaGestures(2);
+                                size_t pos = remoteResponse.rfind("(negación)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
+                            }
+                            else if(remoteResponse.rfind("(risa nerviosa)") != std::string::npos){
+                                this->AdaGestures(12);
+                                size_t pos = remoteResponse.rfind("(risa nerviosa)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
+                            }
+                            else if(remoteResponse.rfind("(interés)") != std::string::npos){
+                                this->AdaGestures(3);
+                                size_t pos = remoteResponse.rfind("(interés)");
+                                remoteResponse.erase(pos, remoteResponse.size() - pos);
+                            }
 
                             this->ResponseText = remoteResponse;
 
@@ -1063,6 +1079,9 @@ void GUI::RenderGui(AI_ENGINE &AI){
             // Make response texture
             MakeResponseTexture(ResponseArea);
         }
+
+        if(IsThinking)
+            AdaGestures(5);
 
         if(!isMinimized){
             SDL_SetRenderDrawColor(renderer, 244, 226, 198, 255);
