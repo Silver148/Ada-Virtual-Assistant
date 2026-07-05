@@ -1046,6 +1046,14 @@ void GUI::RenderGui(AI_ENGINE &AI){
                                 this->AdaGestures(3);
                                 size_t pos = remoteResponse.rfind("(interés)");
                                 remoteResponse.erase(pos, remoteResponse.size() - pos);
+                            }else if(remoteResponse.find("Modelo de IA saturado") != std::string::npos || 
+                                remoteResponse.find("API Key vencida o inválida") != std::string::npos ||
+                                remoteResponse.find("Limite de contexto superado.") != std::string::npos ||
+                                remoteResponse.find("Error inesperado") != std::string::npos ||
+                                remoteResponse.find("Error de conexión con el servidor.") != std::string::npos){
+
+                                this->AdaGestures(14);  
+
                             }
 
                             this->ResponseText = remoteResponse;
