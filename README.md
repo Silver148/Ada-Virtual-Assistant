@@ -49,7 +49,6 @@ Para compilar y correr este proyecto desde cero, necesitas las siguientes herram
 sudo apt install build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libttspico-dev libcurl4-openssl-dev
 ```
 * **Parser JSON: `nlohmann-json que ya está en ./include`**
-* **Motor de voz: binario de Piper en:`./bin/piper`**
 
 ### Dependencias para Windows(MinGW/MSYS2)
 * **Compilador:** `g++` con soporte para C++17 o superior(x86_64).
