@@ -46,7 +46,7 @@ Para compilar y correr este proyecto desde cero, necesitas las siguientes herram
 * **Compilador:** `g++` con soporte para C++17 o superior.
 * **Librerías de Desarrollo:**
 ```bash
-sudo apt install build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libttspico-dev libcurl4-openssl-dev
+sudo apt install build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libttspico-dev libnotify-dev libcurl4-openssl-dev
 ```
 * **Parser JSON: `nlohmann-json que ya está en ./include`**
 
