@@ -67,24 +67,4 @@ Si instalaste Ada para distros basadas en Debian(por el paquete .deb), se debe e
 ada
 ```
 
-### 📥 Nota sobre los modelos de IA
-
-Este proyecto utiliza Git LFS para los modelos de voz. Si al clonar el repositorio el modelo no aparece en `bin/piper/`, ejecuta este comando para descargarlo:
- ```bash
- git lfs pull
- ```
-
-Si el comando anterior falla (por el límite de cuota LFS), descarga manualmente los archivos necesarios con los comandos:
- ```bash
-# Modelo
-
-wget -O "bin/piper/es_AR-daniela-high.onnx" "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx?download=true"
- ```
- ```bash
-# Configuración del modelo
-
-wget -O "bin/piper/es_AR-daniela-high.onnx.json" "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/es/es_AR/daniela/high/es_AR-daniela-high.onnx.json?download=true"
- ```
-Revisa que los archivos se hayan descargado correctamente en bin/piper
-
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
