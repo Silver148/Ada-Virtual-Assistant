@@ -2,7 +2,7 @@
 
 AudioEngine::AudioEngine() {
     SDL_AudioSpec desiredSpec;
-    desiredSpec.freq = 22050;
+    desiredSpec.freq = 16000;
     desiredSpec.format = AUDIO_S16SYS;
     desiredSpec.channels = 1;
     desiredSpec.samples = 2048;

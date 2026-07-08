@@ -7,169 +7,230 @@ Talk.cpp
 #include "Talk.hpp"
 
 #if defined(__linux__) || defined(__unix__)
+static const pico_Uint32 OUT_BUF_SIZE = 1024;
 
-bool PiperBridge::StartPiper() {
-    int textPipe[2], audioPipe[2];
-    
-    if (pipe(textPipe) == -1 || pipe(audioPipe) == -1) {
-        perror("Error creating pipes");
-        return false;
-    }
-
-    char* env[] = {
-        (char*)"OMP_NUM_THREADS=2",
-        (char*)"OMP_WAIT_POLICY=PASSIVE",
-        NULL
-    };
-
-    piperProcessId = fork();
-
-    if (piperProcessId == 0) {
-
-        dup2(textPipe[0], STDIN_FILENO);
-        dup2(audioPipe[1], STDOUT_FILENO);
-
-        for (int i = 3; i < 1024; ++i) close(i); 
-
-        unsetenv("DISPLAY");
-        unsetenv("XAUTHORITY");
-
-        std::string base = get_base_dir();
-        std::string piper_path = base + "/bin/piper/piper";
-
-        execle(piper_path.c_str(), piper_path.c_str(),
-            "--model", modelPath.c_str(),
-            "--output_raw",
-            "--noise_scale", "0.2",
-            "--noise_w", "0.3",
-            "--length_scale", "0.90",
-            NULL, env);
-        _exit(1);
-    } else if (piperProcessId > 0) {
-        close(textPipe[0]); 
-        close(audioPipe[1]);
-        writePipe[1] = textPipe[1];
-        readPipe = audioPipe[0];
-
-        std::thread audioThread(&PiperBridge::StreamAudio, this, dev);
-
-        pthread_t handle = audioThread.native_handle();
-        struct sched_param param;
-        param.sched_priority = 20;
-
-        pthread_setschedparam(handle, SCHED_RR, &param);
-
-        audioThread.detach();
-        return true;
-    } else {
-        perror("Error in fork");
-        return false;
-    }
-}
-
-PiperBridge::PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev) {
-    this->modelPath = modelPath;
+PicoTTS::PicoTTS(SDL_AudioDeviceID dev) {
     this->dev = dev;
-    this->isRunning = true;
-    this->readPipe = -1;
-    this->writePipe[0] = -1;
-    this->writePipe[1] = -1;
-    this->piperProcessId = -1;
-    
-    if (!StartPiper()) {
-        fprintf(stderr, "Could not initialize piper\n");
+
+    picoMemory = std::unique_ptr<char[]>(new char[PICO_MEM_SIZE]);
+    system = nullptr;
+
+    if (pico_initialize(picoMemory.get(), PICO_MEM_SIZE, &system) != PICO_OK) {
+        std::cerr << "Error to init PicoTTS\n";
+        SDL_CloseAudioDevice(dev);
+        return;
     }
+
+    textResource = nullptr;
+    voiceResource = nullptr;
+    auto ta_path = reinterpret_cast<const pico_Char*>("/usr/share/pico/lang/es-ES_ta.bin");
+    auto lh_path = reinterpret_cast<const pico_Char*>("/usr/share/pico/lang/es-ES_zl0_sg.bin");
+
+    if (pico_loadResource(system, ta_path, &textResource) != PICO_OK ||
+        pico_loadResource(system, lh_path, &voiceResource) != PICO_OK) {
+        std::cerr << "Error to load resources\n";
+        pico_terminate(&system);
+        SDL_CloseAudioDevice(dev);
+        return;
+    }
+
+    pico_Retstring textResourceName;
+    pico_Retstring voiceResourceName;
+    pico_getResourceName(system, textResource, textResourceName);
+    pico_getResourceName(system, voiceResource, voiceResourceName);
+
+    auto voice_name = reinterpret_cast<const pico_Char*>("es-US");
+    auto ta_res_name = reinterpret_cast<const pico_Char*>(textResourceName);
+    auto lh_res_name = reinterpret_cast<const pico_Char*>(voiceResourceName);
+
+    if (pico_createVoiceDefinition(system, voice_name) != PICO_OK ||
+        pico_addResourceToVoiceDefinition(system, voice_name, ta_res_name) != PICO_OK ||
+        pico_addResourceToVoiceDefinition(system, voice_name, lh_res_name) != PICO_OK) {
+
+        std::cerr << "Error to associate voice resources.\n";
+        pico_releaseVoiceDefinition(system, voice_name);
+        pico_unloadResource(system, &textResource);
+        pico_unloadResource(system, &voiceResource);
+        pico_terminate(&system);
+        SDL_CloseAudioDevice(dev);
+        return;
+    }
+
+    if (pico_newEngine(system, voice_name, &engine) != PICO_OK) {
+        std::cerr << "Error to create engine instance.\n";
+        pico_releaseVoiceDefinition(system, voice_name);
+        pico_unloadResource(system, &textResource);
+        pico_unloadResource(system, &voiceResource);
+        pico_terminate(&system);
+        SDL_CloseAudioDevice(dev);
+        return;
+    }
+
+    std::cout << "PicoTTS initialized successfully." << std::endl;
+    worker = std::thread(&PicoTTS::WorkerLoop, this);
 }
 
-void PiperBridge::StreamAudio(SDL_AudioDeviceID dev) {
-    char buffer[1024];
-    while (isRunning.load()) {
-        ssize_t bytes = read(readPipe, buffer, sizeof(buffer));
-        
-        if (bytes > 0) {
-            SDL_LockAudioDevice(dev);
-            SDL_QueueAudio(dev, buffer, bytes);
-            SDL_UnlockAudioDevice(dev);
-        } else {
-            break;
+void PicoTTS::Speak(const std::string& message) {
+    if (message.empty()) {
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(queueMutex);
+        if (stopRequested) {
+            return;
+        }
+        pendingMessages.push(message);
+    }
+
+    queueCondition.notify_one();
+}
+
+void PicoTTS::WorkerLoop() {
+    while (true) {
+        std::string message;
+        {
+            std::unique_lock<std::mutex> lock(queueMutex);
+            queueCondition.wait(lock, [this] {
+                return stopRequested || !pendingMessages.empty();
+            });
+
+            if (stopRequested && pendingMessages.empty()) {
+                break;
+            }
+
+            message = std::move(pendingMessages.front());
+            pendingMessages.pop();
+        }
+
+        if (!message.empty()) {
+            SpeakChunk(message);
         }
     }
 }
 
-void PiperBridge::Speak(const std::string& text) {
-       
-    this->isRunning = false; 
-    SDL_PauseAudioDevice(dev, 1);
-    
-    SDL_LockAudioDevice(dev);
-    SDL_ClearQueuedAudio(dev);
-    SDL_UnlockAudioDevice(dev);
-    
-    if (readPipe >= 0) {
-        int flags = fcntl(readPipe, F_GETFL, 0);
-        fcntl(readPipe, F_SETFL, flags | O_NONBLOCK);
-        char dummy[4096];
-        while (read(readPipe, dummy, sizeof(dummy)) > 0);
-        fcntl(readPipe, F_SETFL, flags);
+void PicoTTS::SpeakChunk(const std::string& message) {
+    if (system == nullptr || engine == nullptr) {
+        std::cerr << "PicoTTS is not initialized properly." << std::endl;
+        return;
     }
 
-    Resume(); 
-    
-    std::string command = text + "\n";
-    if (write(writePipe[1], command.c_str(), command.length()) == -1) {
-        perror("Failed to send text to Piper");
-        piperProcessId = -1; 
+    if (message.empty()) {
+        return;
     }
-}
 
-void PiperBridge::Stop() {
-    if (piperProcessId > 0) {
-        this->isRunning = false;
-        
-        SDL_LockAudioDevice(dev);
-        SDL_ClearQueuedAudio(dev);
-        SDL_PauseAudioDevice(dev, 1);
-        
-    }
-}
-
-void PiperBridge::Resume(){
-
-    if (piperProcessId > 0){
-        this->isRunning = true;
+    if (dev != 0) {
         SDL_PauseAudioDevice(dev, 0);
+        SDL_ClearQueuedAudio(dev);
+        SDL_Delay(20);
     }
-        
+
+    if (pico_resetEngine(engine, PICO_RESET_SOFT) != PICO_OK) {
+        std::cerr << "Failed to reset Pico engine before speaking." << std::endl;
+    }
+
+    const auto chunks = SplitTextIntoChunks(message);
+    for (const auto& chunk : chunks) {
+        pico_Int16 bytesPut = 0;
+        auto text_ptr = reinterpret_cast<const pico_Char*>(chunk.c_str());
+        if (pico_putTextUtf8(engine, text_ptr, static_cast<pico_Int16>(chunk.size() + 1), &bytesPut) != PICO_OK) {
+            std::cerr << "Failed to send text to Pico engine." << std::endl;
+            return;
+        }
+
+        std::vector<pico_Char> outBuffer(OUT_BUF_SIZE);
+        pico_Int16 bytesReceived = 0;
+        pico_Int16 dataType = 0;
+        pico_Status status = PICO_STEP_BUSY;
+
+        while (status == PICO_STEP_BUSY) {
+            status = pico_getData(engine, outBuffer.data(), OUT_BUF_SIZE, &bytesReceived, &dataType);
+            if (bytesReceived > 0) {
+                SDL_QueueAudio(dev, outBuffer.data(), bytesReceived);
+
+                while (SDL_GetQueuedAudioSize(dev) > 32768) {
+                    SDL_Delay(10);
+                }
+            }
+        }
+    }
+
+    while (SDL_GetQueuedAudioSize(dev) > 0) {
+        SDL_Delay(10);
+    }
 }
 
-PiperBridge::~PiperBridge() {
-    this->isRunning = false;
-
-    if (writePipe[1] >= 0) {
-        close(writePipe[1]);
-        writePipe[1] = -1;
+std::vector<std::string> PicoTTS::SplitTextIntoChunks(const std::string& text, size_t maxChars) const {
+    std::vector<std::string> chunks;
+    if (text.empty()) {
+        return chunks;
     }
 
-    if (piperProcessId > 0) {
-        kill(piperProcessId, SIGTERM);
+    size_t start = 0;
+    while (start < text.size()) {
+        while (start < text.size() && std::isspace(static_cast<unsigned char>(text[start]))) {
+            ++start;
+        }
+        if (start >= text.size()) {
+            break;
+        }
 
-        int status;
-        waitpid(piperProcessId, &status, 0);
+        size_t end = std::min(text.size(), start + maxChars);
+        size_t split = end;
+
+        if (end < text.size()) {
+            for (size_t i = end; i > start; --i) {
+                const unsigned char ch = static_cast<unsigned char>(text[i - 1]);
+                if (std::ispunct(ch) || std::isspace(ch)) {
+                    split = i;
+                    break;
+                }
+            }
+        }
+
+        if (split > start) {
+            chunks.emplace_back(text.substr(start, split - start));
+            start = split;
+        } else {
+            chunks.emplace_back(text.substr(start, end - start));
+            start = end;
+        }
     }
 
-    if (readPipe >= 0) {
-        close(readPipe);
-        readPipe = -1;
+    return chunks;
+}
+
+PicoTTS::~PicoTTS() {
+    stopRequested = true;
+    queueCondition.notify_all();
+    if (worker.joinable()) {
+        worker.join();
+    }
+
+    if (engine != nullptr && system != nullptr) {
+        pico_disposeEngine(system, &engine);
+        engine = nullptr;
+    }
+
+    if (system != nullptr) {
+        auto voice_name = reinterpret_cast<const pico_Char*>("es-ES");
+        pico_releaseVoiceDefinition(system, voice_name);
+
+        if (textResource != nullptr) {
+            pico_unloadResource(system, &textResource);
+            textResource = nullptr;
+        }
+        if (voiceResource != nullptr) {
+            pico_unloadResource(system, &voiceResource);
+            voiceResource = nullptr;
+        }
+
+        pico_terminate(&system);
+        system = nullptr;
     }
 }
 
-bool CopyToRam(const std::string& source, const std::string& dest) {
-    std::ifstream src(source, std::ios::binary);
-    std::ofstream dst(dest, std::ios::binary);
-    if (!src || !dst) return false;
-    dst << src.rdbuf();
-    return true;
-}
+
 #endif
 
 
@@ -193,20 +254,8 @@ AdaVoice::AdaVoice(){
     }
 }
 #else
-AdaVoice::AdaVoice(SDL_AudioDeviceID dev) {
+AdaVoice::AdaVoice(SDL_AudioDeviceID dev) : picoTTS(dev) {
     this->dev = dev;
-    std::string model_path_in_disk = get_base_dir() + "/bin/piper/es_AR-daniela-quant.onnx";
-    std::string config_model_path_in_disk = get_base_dir() + "/bin/piper/es_AR-daniela-quant.onnx.json";
-    std::string ram_path = "/dev/shm/es_AR-daniela-quant.onnx";
-    std::string config_ram_path = "/dev/shm/es_AR-daniela-quant.onnx.json";
-
-    if(CopyToRam(model_path_in_disk, ram_path) && CopyToRam(config_model_path_in_disk, config_ram_path)){
-        std::cout << "Model copied to RAM successfully." << std::endl;
-        piper = std::make_unique<PiperBridge>(ram_path, dev);
-    } else {
-        std::cerr << "Failed to copy model to RAM." << std::endl;
-        piper = std::make_unique<PiperBridge>(model_path_in_disk, dev);
-    }
 }
 #endif
 
@@ -219,11 +268,7 @@ AdaVoice::~AdaVoice(){
     ::CoUninitialize();
 
 #else
-    std::string ram_path = "/dev/shm/es_AR-daniela-quant.onnx";
-    std::string config_ram_path = "/dev/shm/es_AR-daniela-quant.onnx.json";
 
-    std::remove(ram_path.c_str());
-    std::remove(config_ram_path.c_str());
 #endif
 }
 
@@ -244,11 +289,10 @@ void AdaVoice::TalkAda(std::string message) {
 
     pVoice->Speak(wide_text.c_str(), SPF_ASYNC | SPF_PURGEBEFORESPEAK, NULL);
 #else
-    std::string clean_text = CleanTextForTalk(message);
-    
-    if(piper && !clean_text.empty()){
-        piper->Speak(clean_text);
+    if (picoTTS.dev != 0) {
+        SDL_PauseAudioDevice(picoTTS.dev, 0);
     }
+    picoTTS.Speak(message);
 #endif
 }
 
@@ -257,7 +301,16 @@ void AdaVoice::ShutUpAda(){
     pVoice->Speak(NULL, SPF_PURGEBEFORESPEAK, NULL);
     pVoice->Pause();
 #else
-    piper->Stop();
+    static bool isPaused = true;
+    if (!isPaused) {
+        SDL_PauseAudioDevice(picoTTS.dev, 1);
+        isPaused = true;
+        //std::cout << "Audio paused." << std::endl;
+    } else {
+        SDL_PauseAudioDevice(picoTTS.dev, 0);
+        isPaused = false;
+        //std::cout << "Audio resumed." << std::endl;
+    }
 #endif
 }
 
@@ -269,7 +322,10 @@ std::string AdaVoice::CleanTextForTalk(const std::string& message) {
     text = std::regex_replace(text, gestures, "");
 
     std::regex markdown("[\\*_#`\\-]");
-    text = std::regex_replace(text, markdown, "");
+    text = std::regex_replace(text, markdown, " ");
+
+    std::regex code_blocks("```[\\s\\S]*?```");
+    text = std::regex_replace(text, code_blocks, "");
 
     std::string cleaned_emojis = "";
     cleaned_emojis.reserve(text.size());

@@ -470,6 +470,9 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     if (mouseX >= VoiceButton.x && mouseX <= (VoiceButton.x + VoiceButton.w) &&
                         mouseY >= VoiceButton.y && mouseY <= (VoiceButton.y + VoiceButton.h)) {
                         if (!VoiceIsActive) {
+                            #if defined(__linux__) || defined(__unix__)
+                                voice.ShutUpAda(); //In Linux this pause and resume the audio engine
+                            #endif
                             VoiceIsActive = true;
                         } else {
                             VoiceIsActive = false;

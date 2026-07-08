@@ -53,7 +53,7 @@ else
     INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX)
     LIBS = -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
            -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify) -L$(VOSK_LINUX) -lvosk \
-		   -Wl,-rpath,'$$ORIGIN'
+		   -lttspico -Wl,-rpath,'$$ORIGIN'
 endif
 
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
@@ -106,7 +106,6 @@ else
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
 	ln -s libmd4c.so Ada_packed/libmd4c.so.0
 	cp -f vosk_linux/libvosk.so Ada_packed/libvosk.so
-	cp -rf bin Ada_packed/bin
 
 	@chmod +x Ada_packed/Ada
 

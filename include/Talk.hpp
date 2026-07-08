@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <cstdio>
 #include <regex>
+#include <vector>
+#include <algorithm>
+#include <cctype>
 
 #if defined(__linux__) || defined(__unix__)
 #include <signal.h>
@@ -14,11 +17,20 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <pthread.h>
+
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+
 #include <atomic>
 #include <memory>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+
 #include <fstream>
 #include <iostream>
+
+#include <picoapi.h>
 #include "main.hpp"
 #endif
 
@@ -30,24 +42,36 @@
 #endif
 
 #if defined(__linux__) || defined(__unix__)
-class PiperBridge {
+class PicoTTS {
+
 private:
-    int writePipe[2] = {-1, -1}; // Pipe descriptor for writing to Piper's stdin
-    int readPipe = -1; // Pipe descriptor for reading audio data from Piper
-    pid_t piperProcessId = -1;
-    SDL_AudioDeviceID dev;
-    std::atomic<bool> isRunning{true};
-    std::string modelPath;
+
+    const pico_Uint32 PICO_MEM_SIZE = 2500000;
+    const pico_Uint32 OUT_BUF_SIZE = 1024;
+
+    pico_System system = nullptr;
+    pico_Resource textResource = nullptr;
+    pico_Resource voiceResource = nullptr;
+    pico_Engine engine = nullptr;
+    std::unique_ptr<char[]> picoMemory;
+
+    std::thread worker;
+    std::mutex queueMutex;
+    std::condition_variable queueCondition;
+    std::queue<std::string> pendingMessages;
+    std::atomic<bool> stopRequested{false};
+
+    void WorkerLoop();
+    void SpeakChunk(const std::string& message);
+    std::vector<std::string> SplitTextIntoChunks(const std::string& text, size_t maxChars = 180) const;
 
 public:
-
-    void Stop();
-    void Resume();
+    PicoTTS(SDL_AudioDeviceID dev);
+    ~PicoTTS();
     void Speak(const std::string& message);
-    void StreamAudio(SDL_AudioDeviceID dev);
-    bool StartPiper();
-    PiperBridge(const std::string& modelPath, SDL_AudioDeviceID dev);
-    ~PiperBridge();
+
+    SDL_AudioDeviceID dev;
+
 };
 #endif
 
@@ -58,10 +82,8 @@ private:
     ISpVoice* pVoice = nullptr;
     HRESULT hr;
 #else
-    std::unique_ptr<PiperBridge> piper;
     SDL_AudioDeviceID dev;
-
-    std::string NormalizeTechnicalTerms(std::string message);
+    PicoTTS picoTTS;
 #endif
 
 public:

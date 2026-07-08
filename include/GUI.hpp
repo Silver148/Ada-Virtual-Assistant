@@ -84,9 +84,11 @@ private:
     int maxUserScrollY = 0;
 
     Reminders r;
+
 #if defined(__linux__ ) || defined(__unix___)
     AudioEngine audioEngine;
 #endif
+
     AdaVoice voice;
 
     bool IsThinking = false;
