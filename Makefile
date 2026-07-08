@@ -123,7 +123,16 @@ make_debian_package:
 	@printf '#!/bin/bash\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm
 	@chmod 755 ada_deb/DEBIAN/prerm
 
-	@printf "Package: ada-assistant\nVersion: $(VERSION)\nSection: utils\nPriority: optional\nArchitecture: amd64\nDepends: libcurl4, libsdl2-2.0-0, libttspico0\nMaintainer: Juan Yaguaro (aka silverhacker) <silverhckr6@gmail.com>\nDescription: AI-powered virtual assistant.\n" > ada_deb/DEBIAN/control
+	@printf '%s\n' \
+		'Package: ada-assistant' \
+		"Version: $(VERSION)" \
+		'Section: utils' \
+		'Priority: optional' \
+		'Architecture: amd64' \
+		'Depends: libcurl4, libsdl2-2.0-0, libsdl2-image-2.0-0, libsdl2-ttf-2.0-0, libttspico0t64, libttspico-data' \
+		'Maintainer: Juan Yaguaro (aka silverhacker) <silverhckr6@gmail.com>' \
+		'Description: AI-powered virtual assistant.' \
+		> ada_deb/DEBIAN/control
 
 	dpkg-deb --root-owner-group --build ada_deb ada-assistant_$(VERSION)_amd64.deb
 
