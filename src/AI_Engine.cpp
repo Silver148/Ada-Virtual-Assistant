@@ -112,6 +112,13 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt){
             curl_easy_setopt(curl, CURLOPT_POST, 1L);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str.c_str());
 
+            //be pacient
+            curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 60L);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
+            curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+            curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+            curl_easy_setopt(curl, CURLOPT_TCP_KEEPIDLE, 120L);
+
             //configure to recieve
             curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);

@@ -55,9 +55,10 @@ std::string get_base_dir() {
 #endif
 
 std::vector<std::string> AIModels = {
-    "1. ChatGPT (pros: Excellent if you want a very intelligent Ada. cons: Long response time due to GPT's reasoning process.)",
-    "2. Gemma (Open Source Gemini) (pros: Good personality and capable enough for tasks that aren't too complex. cons: It is overloaded at certain times.)",
-    "3. Nemotron-3 Nano (30B A3B) (pros: Blazing fast responses and ultra-low latency. cons: Free endpoint resources are shared globally.)"
+    "1. Nemotron-3 Ultra (pros: Maximum intelligence and deep reasoning for complex tasks. cons: Higher response times because it's a massive model.)",
+    "2. Nemotron-3 Nano (30B A3B) (pros: The perfect balance between smart answers and stability. cons: Shared community endpoint resources.)",
+    "3. GPT-20B (Reasoning) (pros: Great analytical capability for daily tasks. cons: Takes a bit to process due to its internal thinking process.)",
+    "4. Laguna XS.2 (Coding) (pros: Blazing fast responses and optimized natively for programming. cons: Strictly focused on speed and code.)"
 };
 
 std::string defaultAIModel = "";
@@ -130,8 +131,8 @@ int main(){
             int option = 0;
             std::string inputStr = "";
 
-            while(option < 1 || option > 3){
-                std::cout << "Select an option (1-3): ";
+            while(option < 1 || option > 4){
+                std::cout << "Select an option (1-4): ";
                 std::getline(std::cin, inputStr);
 
                 if (inputStr.empty()) {
@@ -155,17 +156,19 @@ int main(){
                     continue;
                 }
 
-                if (option < 1 || option > 3) {
-                    std::cout << "That option isn't valid, please just 1-3." << std::endl;
+                if (option < 1 || option > 4) {
+                    std::cout << "That option isn't valid, please just 1-4." << std::endl;
                 }
             }
 
-            if(option == 1)
-                defaultAIModel = "openai/gpt-oss-120b:free";
-            else if(option == 2)
-                defaultAIModel = "google/gemma-4-26b-a4b-it:free";
-            else if(option == 3)
+            if (option == 1)
+                defaultAIModel = "nvidia/nemotron-3-ultra-550b-a55b:free";
+            else if (option == 2)
                 defaultAIModel = "nvidia/nemotron-3-nano-30b-a3b:free";
+            else if (option == 3)
+                defaultAIModel = "openai/gpt-oss-20b:free";
+            else if (option == 4)
+                defaultAIModel = "poolside/laguna-xs-2.1:free";
                 
             std::ofstream DefaultModelFile(DefaultModelPath);
             DefaultModelFile << defaultAIModel;
@@ -205,7 +208,7 @@ int main(){
             break;
         }
 
-        std::cout << "Select the AI model :) (1-3)" << std::endl;
+        std::cout << "Select the AI model :) (1-4)" << std::endl;
         std::cout << std::endl;
 
         for(auto m : AIModels){
@@ -217,8 +220,8 @@ int main(){
         int option = 0;
         std::string inputStr = "";
         
-        while(option < 1 || option > 3){
-            std::cout << "Select an option (1-3): ";
+        while(option < 1 || option > 4){
+            std::cout << "Select an option (1-4): ";
             std::getline(std::cin, inputStr);
 
             if (inputStr.empty()) {
@@ -242,17 +245,19 @@ int main(){
                 continue;
             }
 
-            if (option < 1 || option > 3) {
-                std::cout << "That option isn't valid, please just 1-3." << std::endl;
+            if (option < 1 || option > 4) {
+                std::cout << "That option isn't valid, please just 1-4." << std::endl;
             }
         }
 
-        if(option == 1)
-            defaultAIModel = "openai/gpt-oss-120b:free";
-        else if(option == 2)
-            defaultAIModel = "google/gemma-4-26b-a4b-it:free";
-        else if(option == 3)
+        if (option == 1)
+            defaultAIModel = "nvidia/nemotron-3-ultra-550b-a55b:free";
+        else if (option == 2)
             defaultAIModel = "nvidia/nemotron-3-nano-30b-a3b:free";
+        else if (option == 3)
+            defaultAIModel = "openai/gpt-oss-20b:free";
+        else if (option == 4)
+            defaultAIModel = "poolside/laguna-xs-2.1:free";
                 
         std::ofstream DefaultModelFile(DefaultModelPath);
         DefaultModelFile << defaultAIModel;
