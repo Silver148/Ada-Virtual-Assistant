@@ -63,9 +63,7 @@ void LoadCache(const std::string& filename){
         file >> apps_cache;
         file.close();
 
-        // Reconstruimos el unordered_map de forma segura
         discoveredAppsCache = apps_cache.get<std::unordered_map<std::string, std::string>>();
-        std::cout << "[ÉXITO]: " << discoveredAppsCache.size() << " aplicaciones cargadas desde la caché JSON." << std::endl;
 
     } catch (const json::exception& e) {
         std::cerr << "Json cache is bad" << e.what() << std::endl;
