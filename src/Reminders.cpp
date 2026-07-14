@@ -13,21 +13,46 @@ Reminders::Reminders(){
 }
 
 void Reminders::ShowNotification(const char* title, const char* message){
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 
     HWND hwnd = FindWindowA(NULL, "Ada"); 
+    if (!hwnd) {
+        hwnd = GetConsoleWindow(); 
+    }
 
-    NOTIFYICONDATA nid = { sizeof(NOTIFYICONDATA) };
+    NOTIFYICONDATAA nid = {};
+    nid.cbSize = sizeof(NOTIFYICONDATAA);
     nid.hWnd = hwnd;
     nid.uID = 100;
+    
     nid.uFlags = NIF_INFO | NIF_ICON | NIF_TIP;
-    nid.dwInfoFlags = NIIF_INFO;
-        
-    strncpy(nid.szInfoTitle, title, sizeof(nid.szInfoTitle) - 1);
-    strncpy(nid.szInfo, message, sizeof(nid.szInfo) - 1);
-    strncpy(nid.szTip, "Ada", sizeof(nid.szTip) - 1);
+    
+    nid.dwInfoFlags = NIIF_USER | NIIF_LARGE_ICON; 
+    
+    nid.hIcon = (HICON)LoadImageA(
+        GetModuleHandleA(NULL), 
+        MAKEINTRESOURCEA(1), 
+        IMAGE_ICON, 
+        GetSystemMetrics(SM_CXICON),
+        GetSystemMetrics(SM_CYICON),
+        LR_SHARED
+    );
 
-    Shell_NotifyIcon(NIM_ADD, &nid);
+    if (!nid.hIcon) {
+        nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    }
+
+    memset(nid.szInfoTitle, 0, sizeof(nid.szInfoTitle));
+    memset(nid.szInfo, 0, sizeof(nid.szInfo));
+    memset(nid.szTip, 0, sizeof(nid.szTip));
+
+    snprintf(nid.szInfoTitle, sizeof(nid.szInfoTitle), "%s", title);
+    snprintf(nid.szInfo, sizeof(nid.szInfo), "%s", message);
+    snprintf(nid.szTip, sizeof(nid.szTip), "Ada");
+
+    if (!Shell_NotifyIconA(NIM_ADD, &nid)) {
+        Shell_NotifyIconA(NIM_MODIFY, &nid);
+    }
 #else
     // Versión para Linux
     static bool initialized = false;

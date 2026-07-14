@@ -61,7 +61,7 @@ void AI_ENGINE::SetAPI_Key(const std::string &API_Key){
 }
 
 void AI_ENGINE::SetSystemPrompt(const std::string &system_prompt){
-        this->system_prompt = system_prompt;
+    this->system_prompt = system_prompt;
 }
 
 std::string AI_ENGINE::SendPrompt(const std::string &Prompt){

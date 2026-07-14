@@ -44,22 +44,22 @@ CXXFLAGS = -std=c++17 -Wall -O2
 
 ifeq ($(SYSTEM), Windows (MinGW))
     INCS = -Icurl/include/ -Iinclude -ISDL2-Mingw/x86_64-w64-mingw32/include -Imd4c/src \
-			-I$(VOSK_WINDOWS)
-    LIBS = 	-static-libgcc -static-libstdc++ \
-			-L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer \
+            -I$(VOSK_WINDOWS) -Illama.cpp/include
+    LIBS =  -static-libgcc -static-libstdc++ \
+            -L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer \
             -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk \
-			-lmd4c -mwindows -lole32 -lsapi 
+            -lmd4c -Lllama.cpp/build/src -lllama -mwindows -lshell32 -lole32 -lsapi 
 else
-    INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX)
+    INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX) -Illama.cpp/include
     LIBS = -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
-           -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify) -L$(VOSK_LINUX) -lvosk \
-		   -lttspico -Wl,-rpath,'$$ORIGIN'
+           -L$(MD4C_LIB_DIR) -lmd4c -Lllama.cpp/build/src -lllama $(shell pkg-config --libs libnotify) -L$(VOSK_LINUX) -lvosk \
+           -lttspico -Wl,-rpath,'$$ORIGIN'
 endif
 
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 OBJ_LIST = $(OBJECTS) $(RES_OBJ)
 
-all: compile_md4c $(EXE) pack_exe
+all: compile_md4c compile_llama $(EXE) pack_exe
 
 $(EXE): $(OBJECTS) $(RES_OBJ) Makefile
 	$(CPP) $(OBJ_LIST) -o $(EXE) $(LIBS)
@@ -90,6 +90,39 @@ else
 	cmake -B md4c/build -G "Unix Makefiles" md4c
 endif
 	$(MAKE_CMD) -C md4c/build
+
+compile_llama:
+	@echo "Compiling optimized llama.cpp (Only CPU) on $(SYSTEM)..."
+	mkdir -p llama.cpp/build
+ifeq ($(SYSTEM), Windows (MinGW))
+	cmake -B llama.cpp/build -G $(CMAKE_GENERATOR) \
+		-DCMAKE_SYSTEM_NAME=Windows \
+		-DCMAKE_C_COMPILER=$(CC) \
+		-DCMAKE_CXX_COMPILER=$(CPP) \
+		-DGGML_AVX2=ON \
+		-DGGML_FMA=ON \
+		-DGGML_CUDA=OFF \
+		-DGGML_STATIC=ON \
+		-DLLAMA_BUILD_EXAMPLES=OFF \
+		-DLLAMA_BUILD_TESTS=OFF \
+		-DLLAMA_BUILD_TOOLS=OFF \
+		-DLLAMA_BUILD_SERVER=OFF \
+		-DLLAMA_BUILD_APP=OFF \
+		llama.cpp
+else
+	cmake -B llama.cpp/build -G "Unix Makefiles" \
+		-DGGML_AVX2=ON \
+		-DGGML_FMA=ON \
+		-DGGML_CUDA=OFF \
+		-DGGML_STATIC=ON \
+		-DLLAMA_BUILD_EXAMPLES=OFF \
+		-DLLAMA_BUILD_TESTS=OFF \
+		-DLLAMA_BUILD_TOOLS=OFF \
+		-DLLAMA_BUILD_SERVER=OFF \
+		-DLLAMA_BUILD_APP=OFF \
+		llama.cpp
+endif
+	$(MAKE_CMD) -C llama.cpp/build
 
 pack_exe:
 	mkdir -p Ada_packed
@@ -149,6 +182,7 @@ install_debian_package:
 clean:
 	@rm -rf $(OBJ_DIR) *.exe Ada
 	@rm -rf md4c/build
+	@rm -rf llama.cpp/build
 	@rm -rf Ada_packed
 	@rm -f *.deb
 	@rm -f *.tar.gz

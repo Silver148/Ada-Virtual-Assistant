@@ -1,4 +1,4 @@
-MAINICON ICON "Ada-ICON.ico"
+1 ICON "Ada-ICON.ico"
 
 1 VERSIONINFO
 FILEVERSION 1,7,3,0
@@ -17,11 +17,11 @@ BEGIN
 			VALUE "FileDescription", "Ada Virtual Assistant"
 			VALUE "FileVersion", "1.7.3.0"
 			VALUE "InternalName", "Ada"
-			VALUE "LegalCopyright", "Copyright (c) 2026 Juan Yaguaro. MIT License."
+			VALUE "LegalCopyright", "Copyright (c) 2026 Juan Yaguaro (aka silverhacker)"
+			VALUE "LegalTrademarks",  "MIT License - Open Source Software"
 			VALUE "OriginalFilename", "Ada.exe"
 			VALUE "ProductName", "Ada"
 			VALUE "ProductVersion", "1.7.3.0"
-			VALUE "Comments", "Open Source - MIT License."
 		END
 	END
 	BLOCK "VarFileInfo"
