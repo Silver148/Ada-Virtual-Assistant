@@ -9,8 +9,8 @@ Talk.cpp
 #if defined(__linux__) || defined(__unix__)
 static const pico_Uint32 OUT_BUF_SIZE = 1024;
 
-PicoTTS::PicoTTS(SDL_AudioDeviceID dev) {
-    this->dev = dev;
+PicoTTS::PicoTTS(SDL_AudioDeviceID Dev) {
+    this->dev = Dev;
 
     picoMemory = std::unique_ptr<char[]>(new char[PICO_MEM_SIZE]);
     system = nullptr;
@@ -254,8 +254,8 @@ AdaVoice::AdaVoice(){
     }
 }
 #else
-AdaVoice::AdaVoice(SDL_AudioDeviceID dev) : picoTTS(dev) {
-    this->dev = dev;
+AdaVoice::AdaVoice(SDL_AudioDeviceID Dev) : picoTTS(Dev) {
+    this->dev = Dev;
 }
 #endif
 

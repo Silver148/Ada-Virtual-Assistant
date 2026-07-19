@@ -147,7 +147,7 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
     Mode_font = TTF_OpenFont(TextFontPath.c_str(), 16);
 
     if (CopyFont) {
-        CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
+        CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0, 255});
         if (CopySurface) {
             CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
             SDL_FreeSurface(CopySurface);
@@ -158,7 +158,7 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
     }
 
     if (TextVoiceButton_font) {
-        TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
+        TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0, 255});
         
         if (TextVoiceButton_surf) {
             TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
