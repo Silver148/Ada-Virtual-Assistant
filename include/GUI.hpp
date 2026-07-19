@@ -7,15 +7,23 @@
 #include <string>
 #include <iostream>
 #include <thread>
+#include <atomic>
 #include <md4c.h>
 #include <mutex>
 #include "Reminders.hpp"
 #include "Talk.hpp"
 #include "AI_Engine.hpp"
 #include "STT.hpp"
+#if defined(_WIN32) || defined(_WIN64)
+    #include "SearchEXE.hpp"
+    #include <windows.h>
+#endif
 #if defined(__linux__) || defined(__unix__)
 #include "Audio_Engine.hpp"
 #include "main.hpp"
+#include <unistd.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #endif
 
 enum LineType {
@@ -75,6 +83,12 @@ private:
     SDL_Rect TextVoiceButton;
     SDL_Rect VoiceButton;
 
+    TTF_Font* Mode_font = nullptr;
+    SDL_Surface* Mode_surf = nullptr;
+    SDL_Texture* Mode_tex = nullptr;
+    SDL_Rect TextMode;
+    SDL_Rect ModeButton;
+
     SDL_Texture* thinking_texture = nullptr;
 
     int scrollY = 0;
@@ -83,7 +97,7 @@ private:
     int userScrollY = 0;
     int maxUserScrollY = 0;
 
-    Reminders r;
+    Reminders reminders;
 
 #if defined(__linux__ ) || defined(__unix___)
     AudioEngine audioEngine;
@@ -93,6 +107,14 @@ private:
 
     bool IsThinking = false;
     bool VoiceIsActive = false;
+
+    bool LocalMode = false;
+    std::atomic<bool> switchingToOffline = false;
+    std::atomic<int> offlineSwitchResult = 0; // 0 = none, 1 = success, 2 = failure
+    std::thread offlineSwitchThread;
+
+    SDL_Texture* switchingModeTexture = nullptr;
+    SDL_Rect switchingModeRect;
 
     size_t cursorIndex = 0;
 

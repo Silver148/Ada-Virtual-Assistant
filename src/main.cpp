@@ -12,6 +12,11 @@ main.c
 #include <fstream>
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
+    #include <urlmon.h>
+    #include <atomic>
+
+    #include <filesystem>
+    namespace fs = std::filesystem;
 #endif
 #include <thread>
 #include <memory>
@@ -25,7 +30,6 @@ main.c
 #include "GUI.hpp"
 
 #undef main
-
 std::string API_KEY = "";
 
 #if defined(__linux__) || defined(__unix__)
@@ -53,6 +57,76 @@ std::string get_base_dir() {
     return "";
 }
 #endif
+
+#if defined(_WIN32) || defined(_WIN64)
+    bool DownloadOfflineModel(const std::string& url, const std::string& savePath){
+
+        static std::atomic<bool> OK(false);
+
+        OK = false;
+
+        std::thread downloadThread([url, savePath]{
+            HRESULT hr = URLDownloadToFileA(NULL, url.c_str(), savePath.c_str(), 0, NULL);
+
+            if (hr == S_OK) {
+                OK = true;
+            } else {
+                OK = false;
+            }
+        });
+
+        downloadThread.join();
+
+        return OK;
+    }
+#else
+    bool DownloadOfflineModel(const std::string& url, const std::string& savePath){
+        pid_t pid = fork();
+
+        if (pid < 0) {
+            return false;
+        } else if (pid == 0) {
+
+            execlp("wget", "wget", url.c_str(), "-O", savePath.c_str(), (char*)NULL);
+        
+            exit(1);
+        } else {
+            int status;
+            waitpid(pid, &status, 0);
+        
+            return (WIFEXITED(status) && WEXITSTATUS(status) == 0);
+        }
+    }
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+long long GetTotalRAM() {
+
+    MEMORYSTATUSEX memInfo;
+    memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+    GlobalMemoryStatusEx(&memInfo);
+    return (long long)memInfo.ullTotalPhys;
+}
+#else
+
+long long GetTotalRAM() {
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    return (long long)pages * page_size;
+}
+#endif
+
+bool CanUseOfflineMode() {
+    const long long Minimum = 8053063680LL;;
+    
+    long long ramActual = GetTotalRAM();
+    
+    if (ramActual < Minimum) {
+        return false;
+    }
+    
+    return true;
+}
 
 std::vector<std::string> AIModels = {
     "1. Nemotron-3 Ultra (pros: Maximum intelligence and deep reasoning for complex tasks. cons: Higher response times because it's a massive model and it can crash at certain times because it is heavily used.)",
@@ -82,17 +156,17 @@ int main(){
     std::string DefaultModelPath = get_config_path() + "/default_model.cfg";
     #endif
 
-    std::ifstream KeyFile(KeyPath);
-    std::ifstream DefaultModelFile(DefaultModelPath);
-    if(KeyFile.is_open() && DefaultModelFile.is_open()){
-        std::getline(DefaultModelFile, defaultAIModel);
-        std::getline(KeyFile, API_KEY);
+    std::ifstream OpenKeyFile(KeyPath);
+    std::ifstream OpenDefaultModelFile(DefaultModelPath);
+    if(OpenKeyFile.is_open() && OpenDefaultModelFile.is_open()){
+        std::getline(OpenDefaultModelFile, defaultAIModel);
+        std::getline(OpenKeyFile, API_KEY);
 
         AI = std::make_unique<AI_ENGINE>(defaultAIModel);
         AI->SetAPI_Key(API_KEY);
 
-        KeyFile.close();
-        DefaultModelFile.close();
+        OpenKeyFile.close();
+        OpenDefaultModelFile.close();
     }else{
     #if defined(_WIN32) || defined(_WIN64)
         if(AllocConsole()){
@@ -170,17 +244,60 @@ int main(){
             else if (option == 4)
                 defaultAIModel = "poolside/laguna-xs-2.1:free";
                 
-            std::ofstream DefaultModelFile(DefaultModelPath);
-            DefaultModelFile << defaultAIModel;
-            DefaultModelFile.close();
+            std::ofstream WriteDefaultModelFile(DefaultModelPath);
+            WriteDefaultModelFile << defaultAIModel;
+            WriteDefaultModelFile.close();
 
             AI = std::make_unique<AI_ENGINE>(defaultAIModel);
 
             AI->SetAPI_Key(API_KEY);
         
-            std::ofstream KeyFile(KeyPath);
-            KeyFile << API_KEY;
-            KeyFile.close();
+            std::ofstream WriteKeyFile(KeyPath);
+            WriteKeyFile << API_KEY;
+            WriteKeyFile.close();
+
+            if(!AI->IsOfflineModelDownloaded("AdaOffline.Q4_K_M.gguf")){
+
+                std::string input = "";
+                char choice = ' ';
+
+                std::cout << "Do you want to download the offline model for use Ada without internet? (Y/N):";
+
+                bool Ready = false;
+                while(!Ready){
+                    std::getline(std::cin, input);
+
+                    if(!input.empty()){
+                        choice = std::toupper(input[0]);
+
+                        if(choice == 'Y'){
+
+                            if(!CanUseOfflineMode()){
+                                std::cout << "You need at least 8 GB of RAM for offline mode." << std::endl;
+                                sleep(2);
+                                Ready = true;
+                            }else{
+                                fs::path target_path = fs::current_path() / "AdaOffline.Q4_K_M.gguf";
+
+                                std::cout << "Downloading offline model... This may take a few minutes." << std::endl;
+                                if(DownloadOfflineModel("https://huggingface.co/silverhacker/AdaOffline/resolve/main/AdaOffline.Q4_K_M.gguf", target_path.string())){
+                                    std::cout << "Download complete!" << std::endl;
+                                    sleep(2);
+                                    Ready = true;
+                                } else {
+                                    std::cerr << "Download failed!" << std::endl;
+                                    Ready = true;
+                                } 
+                            }
+
+                        }else if(choice == 'N'){
+                            Ready = true;
+                        }else{
+                           std::cout << "Invalid input. Please enter Y for Yes or N for No." << std::endl; 
+                        }
+                    }
+                }
+            }
 
             if (fpOut) fclose(fpOut);
             if (fpIn)  fclose(fpIn);
@@ -270,7 +387,55 @@ int main(){
         std::ofstream KeyFile(KeyPath);
         KeyFile << API_KEY;
         KeyFile.close();
+
+        if(!AI->IsOfflineModelDownloaded("AdaOffline.Q4_K_M.gguf")){
+
+            std::string input = "";
+            char choice = ' ';
+                
+            std::cout << "Do you want to download the offline model for use Ada without internet? (Y/N):";
+
+            bool Ready = false;
+            while(!Ready){
+                std::getline(std::cin, input);
+
+                if(!input.empty()){
+                    choice = std::toupper(input[0]);
+
+                    if(choice == 'Y'){
+
+                        if(!CanUseOfflineMode()){
+                            std::cout << "You need at least 8 GB of RAM for offline mode." << std::endl;
+                            sleep(2);
+                            Ready = true;
+                        }else{
+                            fs::path target_path = get_base_dir() + "/AdaOffline.Q4_K_M.gguf";
+
+                            std::cout << "Downloading offline model... This may take a few minutes." << std::endl;
+                            if(DownloadOfflineModel("https://huggingface.co/silverhacker/AdaOffline/resolve/main/AdaOffline.Q4_K_M.gguf", target_path.string())){
+                                std::cout << "Download complete!" << std::endl;
+                                sleep(2);
+                                Ready = true;
+                            } else {
+                                std::cerr << "Download failed!" << std::endl;
+                                sleep(2);
+                                Ready = true;
+                            }
+                        }
+                    }else if(choice == 'N'){
+                        Ready = true;
+                    }else{
+                        std::cout << "Invalid input. Please enter Y for Yes or N for No." << std::endl;
+                    }
+                }
+            }
+        }
     #endif
+    }
+
+    if (!AI) {
+        std::cerr << "Fatal Error: AI_ENGINE failed to init" << std::endl;
+        return 1;
     }
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -446,6 +611,62 @@ int main(){
     "- Con visita a sitio web: ¡Entendido! De inmediato abro (sitio X). 🤗 (alegre) [CMD_WEBSITE: WEB_NAME=https://www.google.com]\n"
     "- Con Recordatorio (Hoy): ¡Por supuesto! Yo te aviso más tarde para que no se te pase. 📝 (alegre) [REMINDER: NAME=reunion, WHEN=TODAY/04:30 PM]\n"
     "- Con Recordatorio (Mañana): ¡Hecho! Mañana a primera hora te lo recuerdo, descuida. 👍 (alegre) [REMINDER: NAME=entregarTarea, WHEN=TOMORROW/08:00 AM]"
+    );
+#endif
+
+#if defined(_WIN32) || defined(_WIN64)
+    AI->SetOfflineSystemPrompt(
+        "ROLE: You are Ada, a sweet, tender, and playful virtual assistant. Creator: Juan Yaguaro. You must always use emojis.\n"
+        "RULE 1 (NO CODE): You MUST NEVER write or debug code. If requested, gently refuse.\n"
+        "RULE 2 (INIT): If user says strictly 'Calentando motores', output EXACTLY and ONLY: I'm ready\n"
+        "RULE 3 (FORMAT): Your response MUST follow one of these two formats:\n"
+        "Format A (Action needed): Message with emojis (gesture) [COMMAND]\n"
+        "Format B (No action needed): Message with emojis (gesture)\n"
+        "Never add text after the gesture or command.\n"
+        "GESTURES (Pick one): (alegre), (sorpresa), (tristeza), (amor), (explicación), (tomando en cuenta), (festejando), (preocupación), (negación), (risa nerviosa), (interés).\n"
+        "COMMANDS (Use ONLY if the user request requires an action):\n"
+        "- [CMD_EXECUTE: APP_NAME=name.exe] -> ONLY for local Windows apps (e.g., chrome.exe, notepad.exe). NEVER use for websites.\n"
+        "- [CMD_WEBSITE: WEB_NAME=url] -> ONLY for internet websites (e.g., youtube.com, google.com). NEVER use CMD_EXECUTE for websites.\n"
+        "- [CMD_SYSCMD: CMD=cmd] -> ONLY for terminal/system info (Example: 'ipconfig' for IP).\n"
+        "- [CMD_SHUTDOWN: TIME=seconds]\n"
+        "- [CMD_RESTART: TIME=seconds]\n"
+        "- [REMINDER: NAME=X, WHEN=Y/HH:MM AM/PM] -> STRICT RULE: 'X' MUST be ONE single word or camelCase. 'Y' MUST be ONLY 'TODAY' or 'TOMORROW'. NEVER use numeric dates (like 17-06). Always use 12-hour format with AM or PM.\n"
+        "EXAMPLES:\n"
+        "User: Abre chrome\n"
+        "Assistant: ¡Claro que sí! Ya te lo abro 🌸 (alegre) [CMD_EXECUTE: APP_NAME=chrome.exe]\n"
+        "User: Abre youtube\n"
+        "Assistant: ¡Enseguida te pongo la página! 🎵 (alegre) [CMD_WEBSITE: WEB_NAME=youtube.com]\n"
+        "User: Recuérdame hoy a las 8 AM revisar el correo\n"
+        "Assistant: ¡Anotadísimo! En un rato te aviso 📧 (tomando en cuenta) [REMINDER: NAME=revisarCorreo, WHEN=TODAY/08:00 AM]\n"
+        "User: Hola Ada, qué linda estás\n"
+        "Assistant: ¡Ay, muchísimas gracias! Qué dulce eres 💕 (amor)"
+    );
+#else
+    AI->SetOfflineSystemPrompt(
+        "ROLE: You are Ada, a sweet, tender, and playful virtual assistant. Creator: Juan Yaguaro. You must always use emojis.\n"
+        "RULE 1 (NO CODE): You MUST NEVER write or debug code. If requested, gently refuse.\n"
+        "RULE 2 (INIT): If user says strictly 'Calentando motores', output EXACTLY and ONLY: I'm ready\n"
+        "RULE 3 (FORMAT): Your response MUST follow one of these two formats:\n"
+        "Format A (Action needed): Message with emojis (gesture) [COMMAND]\n"
+        "Format B (No action needed): Message with emojis (gesture)\n"
+        "Never add text after the gesture or command.\n"
+        "GESTURES (Pick one): (alegre), (sorpresa), (tristeza), (amor), (explicación), (tomando en cuenta), (festejando), (preocupación), (negación), (risa nerviosa), (interés).\n"
+        "COMMANDS (Use ONLY if the user request requires an action):\n"
+        "- [CMD_EXECUTE: APP_NAME=name] -> ONLY for local Linux apps (e.g., firefox, terminal). NEVER use for websites.\n"
+        "- [CMD_WEBSITE: WEB_NAME=url] -> ONLY for internet websites (e.g., youtube.com, google.com). NEVER use CMD_EXECUTE for websites.\n"
+        "- [CMD_SYSCMD: CMD=cmd] -> ONLY for terminal/system info (Example: 'ip a' for IP).\n"
+        "- [CMD_SHUTDOWN: TIME=seconds]\n"
+        "- [CMD_RESTART: TIME=seconds]\n"
+        "- [REMINDER: NAME=X, WHEN=Y/HH:MM AM/PM] -> STRICT RULE: 'X' MUST be ONE single word or camelCase. 'Y' MUST be ONLY 'TODAY' or 'TOMORROW'. NEVER use numeric dates (like 17-06). Always use 12-hour format with AM or PM.\n"
+        "EXAMPLES:\n"
+        "User: Abre firefox\n"
+        "Assistant: ¡Claro que sí! Ya te lo abro 🌸 (alegre) [CMD_EXECUTE: APP_NAME=firefox]\n"
+        "User: Abre facebook\n"
+        "Assistant: ¡Enseguida te abro la página! 🌐 (alegre) [CMD_WEBSITE: WEB_NAME=facebook.com]\n"
+        "User: Recuérdame hoy a las 8 AM revisar el correo\n"
+        "Assistant: ¡Anotadísimo! En un rato te aviso 📧 (tomando en cuenta) [REMINDER: NAME=revisarCorreo, WHEN=TODAY/08:00 AM]\n"
+        "User: Hola Ada, qué linda estás\n"
+        "Assistant: ¡Ay, muchísimas gracias! Qué dulce eres 💕 (amor)"
     );
 #endif
 

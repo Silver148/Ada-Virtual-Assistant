@@ -5,10 +5,6 @@ GUI.cpp
 */
 
 #include "GUI.hpp"
-#if defined(_WIN32) || defined(_WIN64)
-    #include "SearchEXE.hpp"
-    #include <windows.h>
-#endif
 
 #define FRAME_WIDTH 205
 #define FRAME_HEIGHT 200
@@ -57,9 +53,10 @@ GUI::GUI() : voice(), stt() {
     AdaTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
     CopyFont = TTF_OpenFont(TextFontPath.c_str(), 16);
     TextVoiceButton_font = TTF_OpenFont(TextFontPath.c_str(), 16); 
+    Mode_font = TTF_OpenFont(TextFontPath.c_str(), 16);
 
     if (CopyFont) {
-        CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
+        CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0, 255});
         if (CopySurface) {
             CopyTexture = SDL_CreateTextureFromSurface(renderer, CopySurface);
             SDL_FreeSurface(CopySurface);
@@ -70,7 +67,7 @@ GUI::GUI() : voice(), stt() {
     }
 
     if (TextVoiceButton_font) {
-        TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0});
+        TextVoiceButton_surf = TTF_RenderText_Solid(TextVoiceButton_font, "Voice", {0, 0, 0, 255});
         
         if (TextVoiceButton_surf) {
             TextVoiceButton_tex = SDL_CreateTextureFromSurface(renderer, TextVoiceButton_surf);
@@ -81,8 +78,20 @@ GUI::GUI() : voice(), stt() {
         }    
     }
 
-    r = Reminders();
-    r.LoadReminders();
+    if(Mode_font){
+        Mode_surf = TTF_RenderText_Solid(Mode_font, "Online", {0, 0, 0, 255});
+
+        if(Mode_surf){
+            Mode_tex = SDL_CreateTextureFromSurface(renderer, Mode_surf);
+            SDL_FreeSurface(Mode_surf);
+            Mode_surf = nullptr;
+        }else{
+            fprintf(stderr, "Error to render text 'Mode:' button\n");
+        }
+    }
+
+    reminders = Reminders();
+    reminders.LoadReminders();
 
     stt.Init();
 }
@@ -135,6 +144,7 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
     AdaTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
     CopyFont = TTF_OpenFont(TextFontPath.c_str(), 16);
     TextVoiceButton_font = TTF_OpenFont(TextFontPath.c_str(), 16); 
+    Mode_font = TTF_OpenFont(TextFontPath.c_str(), 16);
 
     if (CopyFont) {
         CopySurface = TTF_RenderText_Solid(CopyFont, "Copy", {0, 0, 0});
@@ -159,8 +169,20 @@ GUI::GUI() : audioEngine(), voice(audioEngine.dev), stt() {
         }    
     }
 
-    r = Reminders();
-    r.LoadReminders();
+    if(Mode_font){
+        Mode_surf = TTF_RenderText_Solid(Mode_font, "Online", {0, 0, 0, 255});
+
+        if(Mode_surf){
+            Mode_tex = SDL_CreateTextureFromSurface(renderer, Mode_surf);
+            SDL_FreeSurface(Mode_surf);
+            Mode_surf = nullptr;
+        }else{
+            fprintf(stderr, "Error to render text 'Mode:' button\n");
+        }
+    }
+
+    reminders = Reminders();
+    reminders.LoadReminders();
 
     stt.Init();
 }
@@ -175,6 +197,11 @@ GUI::~GUI() {
     if (thinking_texture) {
         SDL_DestroyTexture(thinking_texture);
         thinking_texture = nullptr;
+    }
+
+    if (switchingModeTexture) {
+        SDL_DestroyTexture(switchingModeTexture);
+        switchingModeTexture = nullptr;
     }
 
     if (TextVoiceButton_tex) {
@@ -195,6 +222,7 @@ GUI::~GUI() {
     TTF_CloseFont(UserTextFont);
     TTF_CloseFont(AdaTextFont);
     TTF_CloseFont(TextVoiceButton_font);
+    TTF_CloseFont(Mode_font);
 
     TTF_Quit();
     SDL_Quit();
@@ -207,6 +235,8 @@ static RenderLine currentLine;
 static bool nextTextIsBold = false;
 
 int cb_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata) {
+    (void)userdata;
+
     currentLine.tokens.clear();
     
     if (type == MD_BLOCK_H) {
@@ -224,6 +254,10 @@ int cb_enter_block(MD_BLOCKTYPE type, void* detail, void* userdata) {
 }
 
 int cb_leave_block(MD_BLOCKTYPE type, void* detail, void* userdata) {
+    (void)type;
+    (void)detail;
+    (void)userdata;
+
     if (!currentLine.tokens.empty()) {
         g_lines->push_back(currentLine);
         currentLine.tokens.clear();
@@ -232,6 +266,10 @@ int cb_leave_block(MD_BLOCKTYPE type, void* detail, void* userdata) {
 }
 
 int cb_enter_span(MD_SPANTYPE type, void* detail, void* userdata) {
+
+    (void)detail;
+    (void)userdata;
+
     if (type == MD_SPAN_STRONG) {
         nextTextIsBold = true;
     }
@@ -239,6 +277,10 @@ int cb_enter_span(MD_SPANTYPE type, void* detail, void* userdata) {
 }
 
 int cb_leave_span(MD_SPANTYPE type, void* detail, void* userdata) {
+
+    (void)detail;
+    (void)userdata;
+
     if (type == MD_SPAN_STRONG) {
         nextTextIsBold = false;
     }
@@ -246,6 +288,10 @@ int cb_leave_span(MD_SPANTYPE type, void* detail, void* userdata) {
 }
 
 int cb_text(MD_TEXTTYPE type, const MD_CHAR* text, MD_SIZE size, void* userdata) {
+
+    (void)type;
+    (void)userdata;
+
     std::string str(text, size);
     
     if (!str.empty()) {
@@ -401,6 +447,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
     };
 
     VoiceButton = { 1150, 650, 100, 40 };
+    ModeButton = {1150, 580, 100, 40};
 
     int maxInputWidth = UserArea.w - 40;
 
@@ -408,7 +455,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
 
     SDL_StartTextInput();
 
-    SDL_Surface* thinking = TTF_RenderText_Solid(AdaTextFont, "Pensando...", {0, 0, 0}); //Text for thinking state
+    SDL_Surface* thinking = TTF_RenderText_Solid(AdaTextFont, "Pensando...", {0, 0, 0, 255}); //Text for thinking state
     thinking_texture = SDL_CreateTextureFromSurface(renderer, thinking);
 
     SDL_FreeSurface(thinking);
@@ -467,6 +514,59 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                         }
                     }
 
+                    if(mouseX >= ModeButton.x && mouseX <= (ModeButton.x + ModeButton.w) &&
+                        mouseY >= ModeButton.y && mouseY <= (ModeButton.y + ModeButton.h)) {
+
+                        if(!LocalMode && AI.IsOfflineModelDownloaded("AdaOffline.Q4_K_M.gguf")){
+                            if (!switchingToOffline) {
+                                switchingToOffline = true;
+                                offlineSwitchResult = 0;
+
+                                if (switchingModeTexture) {
+                                    SDL_DestroyTexture(switchingModeTexture);
+                                    switchingModeTexture = nullptr;
+                                }
+
+                                SDL_Surface* switchingSurface = TTF_RenderText_Solid(AdaTextFont, "Switching to offline mode", {0, 0, 0, 255});
+                                if (switchingSurface) {
+                                    switchingModeTexture = SDL_CreateTextureFromSurface(renderer, switchingSurface);
+                                    switchingModeRect.w = switchingSurface->w;
+                                    switchingModeRect.h = switchingSurface->h;
+                                    switchingModeRect.x = 1280 / 2 - switchingModeRect.w / 2;
+                                    switchingModeRect.y = 720 / 2 - switchingModeRect.h / 2;
+                                    SDL_FreeSurface(switchingSurface);
+                                }
+
+                                GUI* self = this;
+                                offlineSwitchThread = std::thread([&AI, self]() {
+                                    bool success = AI.InitOfflineMode();
+                                    if (success) {
+                                        self->LocalMode = true;
+                                        self->offlineSwitchResult = 1;
+                                    } else {
+                                        self->offlineSwitchResult = 2;
+                                    }
+                                    self->switchingToOffline = false;
+                                });
+                                offlineSwitchThread.detach();
+                            }
+                        } else {
+                            if (LocalMode) {
+                                LocalMode = false;
+                                AI.DeinitOfflineMode();
+                            }
+                            if(Mode_tex) SDL_DestroyTexture(Mode_tex);
+                            Mode_surf = TTF_RenderText_Solid(Mode_font, "Online", {0, 0, 0, 255});
+                            if(Mode_surf){
+                                Mode_tex = SDL_CreateTextureFromSurface(renderer, Mode_surf);
+                                SDL_FreeSurface(Mode_surf);
+                                Mode_surf = nullptr;
+                            }else{
+                                fprintf(stderr, "Error to render text 'Online' button\n");
+                            }
+                        }
+                    }
+
                     if (mouseX >= VoiceButton.x && mouseX <= (VoiceButton.x + VoiceButton.w) &&
                         mouseY >= VoiceButton.y && mouseY <= (VoiceButton.y + VoiceButton.h)) {
                         if (!VoiceIsActive) {
@@ -488,7 +588,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
                     if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
 
-                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
                     UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
 
                     UserTextRect.x = UserArea.x + 20;
@@ -576,7 +676,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                             if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
                             if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
 
-                            UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+                            UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
                             UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
 
                             UserTextRect.w = UserTextSurface->w;
@@ -687,7 +787,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                         ::CoInitializeEx(NULL, COINIT_MULTITHREADED); //For voice thread
                         #endif
 
-                        std::string remoteResponse = AI.SendPrompt(prompt);
+                        std::string remoteResponse = AI.SendPrompt(prompt, LocalMode);
 
                         if (!remoteResponse.empty()) {
                             if (remoteResponse.rfind("[CMD_SHUTDOWN: TIME=") != std::string::npos) {
@@ -780,6 +880,12 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                                 }
                                             }
 
+                                            int devNull = open("/dev/null", O_WRONLY);
+
+                                            dup2(devNull, STDOUT_FILENO);
+                                            dup2(devNull, STDERR_FILENO);
+                                            close(devNull);
+
                                             setsid();
                                             char* args[] = {const_cast<char*>(app_name.c_str()), NULL};
                                             execvp(args[0], args);
@@ -799,27 +905,22 @@ void GUI::RenderGui(AI_ENGINE &AI) {
 
                                     #if defined(_WIN32) || defined(_WIN64)
                                         std::thread SYSCMD([cmd, this]() {
-                                            if (AllocConsole()) {
-                                                std::lock_guard<std::mutex> lock(this->mutexConsole);
 
-                                                FILE* fpIn = nullptr;
-                                                FILE* fpOut = nullptr;
-                                                freopen_s(&fpOut, "CONOUT$", "w", stdout);
-                                                freopen_s(&fpIn, "CONIN$", "r", stdin);
+                                            STARTUPINFO si;
+                                            PROCESS_INFORMATION pi;
 
-                                                std::string windowName = cmd + " Output";
-                                                SetConsoleTitleA(windowName.c_str());
+                                            ZeroMemory(&si, sizeof(si));
+                                            si.cb = sizeof(si);
+                                            ZeroMemory(&pi, sizeof(pi));
+                                            
+                                            std::string finalCommand = "cmd.exe /k " + cmd;
+                                            std::vector<char> cmdBuffer(finalCommand.begin(), finalCommand.end());
+                                            cmdBuffer.push_back('\0');
+                                            char* lpCommandLine = cmdBuffer.data();
 
-                                                system(cmd.c_str());
-                                                system("pause");
-
-                                                if (fpOut) fclose(fpOut);
-                                                if (fpIn)  fclose(fpIn);
-
-                                                freopen_s(&fpOut, "NUL", "w", stdout);
-                                                freopen_s(&fpIn, "NUL", "r", stdin);
-
-                                                FreeConsole(); 
+                                            if(CreateProcessA(NULL, lpCommandLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)){
+                                                CloseHandle(pi.hProcess);
+                                                CloseHandle(pi.hThread);
                                             }
                                         });
 
@@ -840,7 +941,9 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                     std::string web_name = remoteResponse.substr(start_lenght, length);
 
                                     #if defined(_WIN32) || defined(_WIN64)
-                                        SHELLEXECUTEINFO sei = {0};
+                                        SHELLEXECUTEINFO sei;
+                                        ZeroMemory(&sei, sizeof(sei));
+
                                         sei.cbSize = sizeof(SHELLEXECUTEINFO);
                                         sei.fMask = SEE_MASK_NOCLOSEPROCESS;
                                         sei.hwnd = NULL;
@@ -866,6 +969,12 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                                     perror("Failed to change directory");
                                                 }
                                             }
+
+                                            int devNull = open("/dev/null", O_WRONLY);
+
+                                            dup2(devNull, STDOUT_FILENO);
+                                            dup2(devNull, STDERR_FILENO);
+                                            close(devNull);
 
                                             setsid();
                                             execlp("xdg-open", "xdg-open", web_name.c_str(), NULL);
@@ -910,7 +1019,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                                     } else if (string_end.find("AM") != std::string::npos || string_end.find("am") != std::string::npos) {
                                                         am_or_pm = "AM";
                                                     }
-                                                    this->r.CreateReminder(name, when_day, hour, minute, am_or_pm);
+                                                    this->reminders.CreateReminder(name, when_day, hour, minute, am_or_pm);
                                                 } catch(...) {}
                                             }
                                         }
@@ -991,6 +1100,21 @@ void GUI::RenderGui(AI_ENGINE &AI) {
             }
         }
 
+        if (offlineSwitchResult == 1) {
+            LocalMode = true;
+            if(Mode_tex) SDL_DestroyTexture(Mode_tex);
+            Mode_surf = TTF_RenderText_Solid(Mode_font, "Offline", {0, 0, 0, 255});
+            if(Mode_surf){
+                Mode_tex = SDL_CreateTextureFromSurface(renderer, Mode_surf);
+                SDL_FreeSurface(Mode_surf);
+                Mode_surf = nullptr;
+            }
+            offlineSwitchResult = 0;
+        } else if (offlineSwitchResult == 2) {
+            // Offline mode failed; just reset state and keep online text.
+            offlineSwitchResult = 0;
+        }
+
         if (!IsThinking && !this->ResponseText.empty() && LastResponse != this->ResponseText) {
             LastResponse = this->ResponseText;
             scrollY = 0; // Reset scroll
@@ -1017,6 +1141,27 @@ void GUI::RenderGui(AI_ENGINE &AI) {
             SDL_RenderDrawRect(renderer, &ResponseArea);
             SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
             SDL_RenderDrawRect(renderer, &UserArea);
+
+            //Mode button
+            if(LocalMode){
+                SDL_SetRenderDrawColor(renderer, 200, 190, 170, 255);
+            } else {
+                SDL_SetRenderDrawColor(renderer, 152, 251, 152, 255);
+            }
+            SDL_RenderFillRect(renderer, &ModeButton);
+
+            int TextModeW = 0, TextModeH = 0;
+            SDL_QueryTexture(Mode_tex, NULL, NULL, &TextModeW, &TextModeH);
+
+            TextMode.x = ModeButton.x + (ModeButton.w - TextModeW)  / 2;
+            TextMode.y = ModeButton.y + (ModeButton.h - TextModeH) / 2;
+            TextMode.w = TextModeW;
+            TextMode.h = TextModeH;
+
+            SDL_RenderCopy(renderer, Mode_tex, NULL, &TextMode);
+
+            SDL_SetRenderDrawColor(renderer, 43, 43, 43, 50);
+            SDL_RenderDrawRect(renderer, &ModeButton);
 
             //Copy button
             if (mx >= CopyButton.x && mx <= (CopyButton.x + CopyButton.w) &&
@@ -1076,6 +1221,10 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     }
                 }
                 SDL_RenderSetClipRect(renderer, NULL);
+            }
+
+            if (switchingToOffline && switchingModeTexture) {
+                SDL_RenderCopy(renderer, switchingModeTexture, NULL, &switchingModeRect);
             }
 
             /*CODE FOR USER AREA AND TEXT CURSOR ;)*/
@@ -1204,7 +1353,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
                     if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
 
-                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0}, maxInputWidth);
+                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
                     UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
 
                     UserTextRect.x = UserArea.x + 20;
@@ -1227,7 +1376,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                 }
             }
 
-            r.CheckReminders();
+            reminders.CheckReminders();
             SDL_RenderPresent(renderer);
 
             auto frameEnd = std::chrono::high_resolution_clock::now();

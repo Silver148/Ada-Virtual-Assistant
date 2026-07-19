@@ -1,7 +1,8 @@
-VERSION = 1.7.3
+VERSION = 1.8.0
 CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
+DEBUG ?= 0
 
 ifeq ($(OS),Windows_NT)
 	CROSS = 1
@@ -40,26 +41,36 @@ MD4C_LIB_DIR = md4c/build/src/
 VOSK_LINUX = vosk_linux/
 VOSK_WINDOWS = vosk_win64/
 
-CXXFLAGS = -std=c++17 -Wall -O2
+CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2
+
+ifeq ($(DEBUG), 1)
+    CXXFLAGS += -O0 -g -DDEBUG_MODE
+else
+    CXXFLAGS += -O3 -DNDEBUG
+endif
+
+ifeq ($(DEBUG), 1)
+    CXXFLAGS += -fsanitize=address -fno-omit-frame-pointer
+endif
 
 ifeq ($(SYSTEM), Windows (MinGW))
     INCS = -Icurl/include/ -Iinclude -ISDL2-Mingw/x86_64-w64-mingw32/include -Imd4c/src \
-            -I$(VOSK_WINDOWS) -Illama.cpp/include
+            -I$(VOSK_WINDOWS)
     LIBS =  -static-libgcc -static-libstdc++ \
             -L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer \
-            -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk \
-            -lmd4c -Lllama.cpp/build/src -lllama -mwindows -lshell32 -lole32 -lsapi 
+            -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk -lmd4c \
+			-mwindows -lshell32 -lole32 -lsapi -lurlmon
 else
-    INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX) -Illama.cpp/include
+    INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX)
     LIBS = -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \
-           -L$(MD4C_LIB_DIR) -lmd4c -Lllama.cpp/build/src -lllama $(shell pkg-config --libs libnotify) -L$(VOSK_LINUX) -lvosk \
-           -lttspico -Wl,-rpath,'$$ORIGIN'
+           -L$(MD4C_LIB_DIR) -lmd4c $(shell pkg-config --libs libnotify) -L$(VOSK_LINUX) -lvosk -lttspico \
+		   -Wl,-rpath,'$$ORIGIN'
 endif
 
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 OBJ_LIST = $(OBJECTS) $(RES_OBJ)
 
-all: compile_md4c compile_llama $(EXE) pack_exe
+all: compile_md4c compile_llama-server $(EXE) pack_exe
 
 $(EXE): $(OBJECTS) $(RES_OBJ) Makefile
 	$(CPP) $(OBJ_LIST) -o $(EXE) $(LIBS)
@@ -78,51 +89,66 @@ $(RES_OBJ): resource.rc
 endif
 
 compile_md4c:
-	@echo "Compiling md4c dependence on $(SYSTEM)..."
-	mkdir -p md4c/build
-ifeq ($(SYSTEM), Windows (MinGW))
-	cmake -B md4c/build -G $(CMAKE_GENERATOR) \
-		-DCMAKE_SYSTEM_NAME=Windows \
-		-DCMAKE_C_COMPILER=$(CC) \
-		-DCMAKE_CXX_COMPILER=$(CPP) \
-		md4c
-else
-	cmake -B md4c/build -G "Unix Makefiles" md4c
-endif
-	$(MAKE_CMD) -C md4c/build
+	@if [ -d "md4c/build" ]; then \
+		echo "Dependency md4c already compiled. Skipping."; \
+	else \
+		echo "Compiling md4c dependence on $(SYSTEM)..."; \
+		mkdir -p md4c/build; \
+		if [ "$(SYSTEM)" = "Windows (MinGW)" ]; then \
+			cmake -B md4c/build -G $(CMAKE_GENERATOR) \
+				-DCMAKE_SYSTEM_NAME=Windows \
+				-DCMAKE_C_COMPILER=$(CC) \
+				-DCMAKE_CXX_COMPILER=$(CPP) \
+				md4c; \
+		else \
+			cmake -B md4c/build -G "Unix Makefiles" md4c; \
+		fi; \
+		$(MAKE_CMD) -j3 -C md4c/build; \
+	fi
 
-compile_llama:
-	@echo "Compiling optimized llama.cpp (Only CPU) on $(SYSTEM)..."
-	mkdir -p llama.cpp/build
-ifeq ($(SYSTEM), Windows (MinGW))
-	cmake -B llama.cpp/build -G $(CMAKE_GENERATOR) \
-		-DCMAKE_SYSTEM_NAME=Windows \
-		-DCMAKE_C_COMPILER=$(CC) \
-		-DCMAKE_CXX_COMPILER=$(CPP) \
-		-DGGML_AVX2=ON \
-		-DGGML_FMA=ON \
-		-DGGML_CUDA=OFF \
-		-DGGML_STATIC=ON \
-		-DLLAMA_BUILD_EXAMPLES=OFF \
-		-DLLAMA_BUILD_TESTS=OFF \
-		-DLLAMA_BUILD_TOOLS=OFF \
-		-DLLAMA_BUILD_SERVER=OFF \
-		-DLLAMA_BUILD_APP=OFF \
-		llama.cpp
-else
-	cmake -B llama.cpp/build -G "Unix Makefiles" \
-		-DGGML_AVX2=ON \
-		-DGGML_FMA=ON \
-		-DGGML_CUDA=OFF \
-		-DGGML_STATIC=ON \
-		-DLLAMA_BUILD_EXAMPLES=OFF \
-		-DLLAMA_BUILD_TESTS=OFF \
-		-DLLAMA_BUILD_TOOLS=OFF \
-		-DLLAMA_BUILD_SERVER=OFF \
-		-DLLAMA_BUILD_APP=OFF \
-		llama.cpp
-endif
-	$(MAKE_CMD) -C llama.cpp/build
+compile_llama-server:
+	@if [ -d "llama.cpp/build" ]; then \
+		echo "Universal llama-server already compiled. Skipping."; \
+	else \
+		echo "Compiling UNIVERSAL llama-server (Smart Dynamic CPU) on $(SYSTEM)..."; \
+		mkdir -p llama.cpp/build; \
+		if [ "$(SYSTEM)" = "Windows (MinGW)" ]; then \
+			cmake -B llama.cpp/build -G $(CMAKE_GENERATOR) \
+				-DCMAKE_SYSTEM_NAME=Windows \
+				-DCMAKE_C_COMPILER=$(CC) \
+				-DCMAKE_CXX_COMPILER=$(CPP) \
+				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+				-DCMAKE_BUILD_TYPE=Release \
+				-DGGML_OPENMP=ON \
+				-DGGML_BACKEND_DL=ON \
+				-DGGML_CPU_ALL_VARIANTS=ON \
+				-DGGML_CUDA=OFF \
+				-DBUILD_SHARED_LIBS=ON \
+				-DLLAMA_BUILD_EXAMPLES=OFF \
+				-DLLAMA_BUILD_TESTS=OFF \
+				-DLLAMA_BUILD_TOOLS=ON \
+				-DLLAMA_BUILD_SERVER=ON \
+				-DLLAMA_BUILD_APP=OFF \
+				llama.cpp; \
+		else \
+			cmake -B llama.cpp/build -G "Unix Makefiles" \
+				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+				-DCMAKE_BUILD_TYPE=Release \
+				-DGGML_OPENMP=ON \
+				-DGGML_BACKEND_DL=ON \
+				-DGGML_CPU_ALL_VARIANTS=ON \
+				-DGGML_CUDA=OFF \
+				-DBUILD_SHARED_LIBS=ON \
+				-DLLAMA_BUILD_EXAMPLES=OFF \
+				-DLLAMA_BUILD_TESTS=OFF \
+				-DLLAMA_BUILD_TOOLS=ON \
+				-DLLAMA_BUILD_SERVER=ON \
+				-DLLAMA_BUILD_APP=OFF \
+				llama.cpp; \
+		fi; \
+		$(MAKE_CMD) -j3 -C llama.cpp/build llama-server; \
+	fi
+
 
 pack_exe:
 	mkdir -p Ada_packed
@@ -134,6 +160,7 @@ ifeq ($(SYSTEM), Windows (MinGW))
 	cp curl/bin/libcurl-x64.dll Ada_packed/libcurl-x64.dll
 	cp -f SDL2-Mingw/x86_64-w64-mingw32/bin/*.dll Ada_packed/
 	cp -f vosk_win64/*.dll Ada_packed/
+	cp -f llama.cpp/build/bin/* Ada_packed/
 else
 	rm -f Ada_packed/libmd4c.so Ada_packed/libmd4c.so.0
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
@@ -179,10 +206,18 @@ pack_for_windows:
 install_debian_package:
 	sudo apt install ./ada-assistant_$(VERSION)_amd64.deb
 
-clean:
-	@rm -rf $(OBJ_DIR) *.exe Ada
+clean_all:
 	@rm -rf md4c/build
 	@rm -rf llama.cpp/build
+	@rm -rf $(OBJ_DIR) *.exe Ada
+	@rm -rf Ada_packed
+	@rm -f *.deb
+	@rm -f *.tar.gz
+	@rm -f *.zip
+	@echo "Cleaned!"
+
+clean_app:
+	@rm -rf $(OBJ_DIR) *.exe Ada
 	@rm -rf Ada_packed
 	@rm -f *.deb
 	@rm -f *.tar.gz

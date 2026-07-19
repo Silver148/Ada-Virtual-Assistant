@@ -1,6 +1,4 @@
 #include "SearchEXE.hpp"
-#include <iostream>
-#include <unordered_set>
 
 using json = nlohmann::json;
 

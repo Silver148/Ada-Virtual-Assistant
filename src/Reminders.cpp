@@ -104,11 +104,11 @@ void Reminders::CreateReminder(std::string name, std::string when_day, int hour,
 
     if (when_day == "TODAY") {
         std::time_t t = std::time(nullptr);
-        std::tm* now = std::localtime(&t);
-        
-        day = now->tm_mday;
-        month = now->tm_mon + 1;
-        year = now->tm_year + 1900;
+        std::tm* today = std::localtime(&t);
+
+        day = today->tm_mday;
+        month = today->tm_mon + 1;
+        year = today->tm_year + 1900;
     }else if(when_day == "TOMORROW"){
         std::time_t t = std::time(nullptr);
     

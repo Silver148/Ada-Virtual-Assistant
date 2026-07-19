@@ -239,7 +239,7 @@ AdaVoice::AdaVoice(){
 
     ::CoInitialize(NULL);
     
-    HRESULT hr = ::CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+    hr = ::CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
     
     if (SUCCEEDED(hr) && pVoice != NULL) {
         IEnumSpObjectTokens* pEnum = NULL;

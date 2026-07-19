@@ -1,8 +1,8 @@
 1 ICON "Ada-ICON.ico"
 
 1 VERSIONINFO
-FILEVERSION 1,7,3,0
-PRODUCTVERSION 1,7,3,0
+FILEVERSION 1,8,0,0
+PRODUCTVERSION 1,8,0,0
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0
 FILEOS 0x40004
@@ -15,13 +15,13 @@ BEGIN
 		BEGIN
 			VALUE "CompanyName", "Juan Yaguaro (aka silverhacker)"
 			VALUE "FileDescription", "Ada Virtual Assistant"
-			VALUE "FileVersion", "1.7.3.0"
+			VALUE "FileVersion", "1.8.0.0"
 			VALUE "InternalName", "Ada"
 			VALUE "LegalCopyright", "Copyright (c) 2026 Juan Yaguaro (aka silverhacker)"
 			VALUE "LegalTrademarks",  "MIT License - Open Source Software"
 			VALUE "OriginalFilename", "Ada.exe"
 			VALUE "ProductName", "Ada"
-			VALUE "ProductVersion", "1.7.3.0"
+			VALUE "ProductVersion", "1.8.0.0"
 		END
 	END
 	BLOCK "VarFileInfo"
