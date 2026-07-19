@@ -273,7 +273,7 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt, bool useOffline, bo
     if(useOffline){
         AI_config["model"] = "local";
     }else{
-        AI_config["model"] = AI_config.value("model", defaultModel);
+        AI_config["model"] = defaultModel;
     }
 
     //std::cout << "JSON ready to send:\n" << AI_config.dump(4) << std::endl;

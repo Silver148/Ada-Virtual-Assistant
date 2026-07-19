@@ -527,6 +527,32 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                     switchingModeTexture = nullptr;
                                 }
 
+                                /*DESTROY IF LINE TEXTURE HAS TEXT*/
+                                for (SDL_Texture* tex : lineTextures) {
+                                    if (tex && tex != thinking_texture) {
+                                        SDL_DestroyTexture(tex);
+                                    }
+                                }
+
+                                lineTextures.clear();
+                                lineRects.clear();
+                                parsedLines.clear();
+
+                                this->ResponseText = "";
+                                this->LastResponse = "";
+
+                                if (UserTextTexture != nullptr) {
+                                    SDL_DestroyTexture(UserTextTexture);
+                                    UserTextTexture = nullptr;
+                                }
+                                if (UserTextSurface != nullptr) {
+                                    SDL_FreeSurface(UserTextSurface);
+                                    UserTextSurface = nullptr;
+                                }
+                                userScrollY = 0;
+                                maxUserScrollY = 0;
+                                scrollY = 0;
+
                                 SDL_Surface* switchingSurface = TTF_RenderText_Solid(AdaTextFont, "Switching to offline mode", {0, 0, 0, 255});
                                 if (switchingSurface) {
                                     switchingModeTexture = SDL_CreateTextureFromSurface(renderer, switchingSurface);
