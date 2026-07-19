@@ -70,7 +70,14 @@ AI_ENGINE::AI_ENGINE(const std::string& model){
 }
 
 AI_ENGINE::~AI_ENGINE() {
-    DeinitOfflineMode();
+    #if defined(__linux__) || defined(__unix__)
+    if(server && server->pid != -1)
+        DeinitOfflineMode();
+
+    #else
+    if(server && server->hProcess)
+        DeinitOfflineMode();
+    #endif
 }
 
 void AI_ENGINE::SetAPI_Key(const std::string &api_key){
