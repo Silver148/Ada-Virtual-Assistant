@@ -165,7 +165,7 @@ bool AI_ENGINE::StartLLamaServer() {
     }
 
     if (!ready) {
-        std::cerr << "llama-server se ejecuto pero no respondio a tiempo." << std::endl;
+        std::cerr << "llama-server ran but did not respond in time." << std::endl;
         StopLLamaServer();
         return false;
     }
