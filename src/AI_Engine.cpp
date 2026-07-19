@@ -70,7 +70,14 @@ AI_ENGINE::AI_ENGINE(const std::string& model){
 }
 
 AI_ENGINE::~AI_ENGINE() {
-    DeinitOfflineMode();
+    #if defined(__linux__) || defined(__unix__)
+    if(server && server->pid != -1)
+        DeinitOfflineMode();
+
+    #else
+    if(server && server->hProcess)
+        DeinitOfflineMode();
+    #endif
 }
 
 void AI_ENGINE::SetAPI_Key(const std::string &api_key){
@@ -95,10 +102,10 @@ bool AI_ENGINE::StartLLamaServer() {
     server = std::make_unique<Server>();
 
     std::filesystem::path model_path(offline_model_path);
-
-    std::filesystem::path server_path = "llama-server.exe";
     
     #if defined(_WIN32) || defined(_WIN64)
+
+        std::filesystem::path server_path = "llama-server.exe";
 
         std::string cmd = "\"" + server_path.string() + "\"" + 
                 " -m \"" + model_path.string() + "\"" + 

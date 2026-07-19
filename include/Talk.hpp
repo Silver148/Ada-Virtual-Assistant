@@ -66,7 +66,7 @@ private:
     std::vector<std::string> SplitTextIntoChunks(const std::string& text, size_t maxChars = 180) const;
 
 public:
-    PicoTTS(SDL_AudioDeviceID dev);
+    PicoTTS(SDL_AudioDeviceID Dev);
     ~PicoTTS();
     void Speak(const std::string& message);
 
@@ -94,7 +94,7 @@ public:
     
     AdaVoice();
 #else
-    AdaVoice(SDL_AudioDeviceID dev);
+    AdaVoice(SDL_AudioDeviceID Dev);
 #endif
 
     ~AdaVoice();

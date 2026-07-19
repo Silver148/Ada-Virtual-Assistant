@@ -156,11 +156,11 @@ pack_exe:
 	cp -rf fonts Ada_packed/fonts
 	cp Ada_SpriteSheet.png Ada_packed/Ada_SpriteSheet.png
 	cp -rf vosk_model Ada_packed/vosk_model
+	cp -f llama.cpp/build/bin/* Ada_packed/
 ifeq ($(SYSTEM), Windows (MinGW))
 	cp curl/bin/libcurl-x64.dll Ada_packed/libcurl-x64.dll
 	cp -f SDL2-Mingw/x86_64-w64-mingw32/bin/*.dll Ada_packed/
 	cp -f vosk_win64/*.dll Ada_packed/
-	cp -f llama.cpp/build/bin/* Ada_packed/
 else
 	rm -f Ada_packed/libmd4c.so Ada_packed/libmd4c.so.0
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
