@@ -14,6 +14,7 @@
 * **Voz a Texto (STT):** La app usa **Vosk** para poder transcribir tu voz a texto, esto con el fin de poder dar prompts por voz y solo dar a Enter para enviar. Para usar esta característica presiona Shift + F1 en la app.
 * **Capacidad de controlar tu PC:** Ella puede tanto apagar tu PC, reiniciarla, abrir apps de tu equipo, abrir sitios webs, ejecutar comandos del sistema y hacerte recordatorios para hoy o mañana.
 * **Gestos**: Ada cambia de gesto dependiendo del tema que hables con ella. Esto es con el objetivo de que la comunicación con ella sea más interactiva
+* **Modo Offline**: La app tiene un modo offline impulsado por [Llama](https://github.com/ggml-org/llama.cpp/tree/6eddde06a4f25d55d538b5d15628dcc2b6882147). Para poder usar este modo necesitas tener como mínimo 8GB de RAM. Se recomienda tener 16GB de RAM si desea usar el modo offline con una buena cantidad de apps abiertas en el equipo.
 
 ---
 
