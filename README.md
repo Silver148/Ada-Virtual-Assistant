@@ -56,7 +56,7 @@ sudo apt install build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev l
 * **Librerías gráficas: SDL2, SDL2_image, SDL2_ttf**
 * **Librería de red: `libcurl`**
 
-Para iniciar los submodulos(en este caso md4c), ejecuta en la terminal:
+Para iniciar los submodulos(en este caso md4c y llama.cpp), ejecuta en la terminal:
  ```bash
  git submodule update --init --recursive
  ```
@@ -66,5 +66,13 @@ Si instalaste Ada para distros basadas en Debian(por el paquete .deb), se debe e
 ```bash
 ada
 ```
+
+# Instrucciones para compilar
+Si desea compilar Ada para tu OS anfitrión solo usa el comando `make`. En el caso de querer compilar para Windows desde Linux use el comando `make CROSS=1`. Para compilar en Windows solo se requiere el comando `make`.
+
+## Instrucciones para empaquetar
+Con el comando `make make_debian_package` se crea el .deb de Ada, con `make install_debian_package` se instala el paquete en su equipo. En Linux al usar `make` automáticamente se crea el .tar.gz.
+
+En Windows con el comando `make pack_for_windows` se crea el .zip para Windows
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
