@@ -70,6 +70,10 @@ ada
 # Instrucciones para compilar
 Si desea compilar Ada para tu OS anfitrión solo usa el comando `make`. En el caso de querer compilar para Windows desde Linux use el comando `make CROSS=1`. Para compilar en Windows solo se requiere el comando `make`.
 
+Si quiere hacerle debugging a la app, compile la app con el parámetro DEBUG=1, ej: `make DEBUG=1`, `make DEBUG=1 CROSS=1 all`
+
+Para limpiar la compilación de la app utilice el comando `make clean_app`. Luego para limpiar todo incluyendo la compilación de las dependencias(md4c y llama.cpp) use el comando `make clean_all`.
+
 ## Instrucciones para empaquetar
 Con el comando `make make_debian_package` se crea el .deb de Ada, con `make install_debian_package` se instala el paquete en su equipo. En Linux al usar `make` automáticamente se crea el .tar.gz.
 
