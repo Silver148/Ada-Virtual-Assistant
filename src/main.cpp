@@ -117,7 +117,7 @@ long long GetTotalRAM() {
 #endif
 
 bool CanUseOfflineMode() {
-    const long long Minimum = 8053063680LL;;
+    const long long Minimum = 8053063680LL;
     
     long long ramActual = GetTotalRAM();
     
