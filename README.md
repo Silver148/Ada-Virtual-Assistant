@@ -20,7 +20,7 @@
 
 ## Requisito inicial para utilizar a la asistente 
 
-Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrouter.ai). Para obtenerla haz los siguentes pasos:
+Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrouter.ai). Para obtenerla haz los siguientes pasos:
 
 * Obtener API Key:
     * Registra/Inicia sesión en [OpenRouter](https://www.openrouter.ai)
@@ -34,8 +34,10 @@ Para poder utilizarla necesitas una API Key de [OpenRouter](https://www.openrout
     * Guarda la API Key en un sitio seguro
 
     * Ingresa la API Key al momento de iniciar la app(por primera vez)
+ 
+    * Elija un modelo de IA en la app
 
-    * Diviertete con Ada ;)
+    * Diviértete con Ada ;)
 
 ---
 
