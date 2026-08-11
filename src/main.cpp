@@ -87,7 +87,7 @@ std::string get_base_dir() {
             return false;
         } else if (pid == 0) {
 
-            execlp("wget", "wget", url.c_str(), "-O", savePath.c_str(), (char*)NULL);
+            execlp("sudo", "sudo", "wget", url.c_str(), "-O", savePath.c_str(), (char*)NULL);
         
             exit(1);
         } else {
