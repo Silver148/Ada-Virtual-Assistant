@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Ada Virtual Assistant
+GenericName=Virtual Assistant
+Comment=AI-powered virtual assistant
+Exec=ada
+Icon=/opt/ada/Ada-ICON.png
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+StartupWMClass=ada-virtual-assistant

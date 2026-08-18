@@ -1,4 +1,4 @@
-VERSION = 1.8.0
+VERSION = 1.8.1
 CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
@@ -168,6 +168,10 @@ else
 	cp -f vosk_linux/libvosk.so Ada_packed/libvosk.so
 
 	@chmod +x Ada_packed/Ada
+	cp -f launcher/ada-launcher Ada_packed/ada-launcher
+	chmod +x Ada_packed/ada-launcher
+
+	cp -f Ada-ICON.png Ada_packed/Ada-ICON.png
 
 	tar -czvf Ada-$(VERSION)-linux-amd64.tar.gz -C Ada_packed .
 endif
@@ -175,9 +179,11 @@ endif
 make_debian_package:
 	mkdir -p ada_deb/opt/ada/
 	mkdir -p ada_deb/DEBIAN
+	mkdir -p ada_deb/usr/share/applications/
 	cp -r Ada_packed/* ada_deb/opt/ada/
+	cp desktop/ada-virtual-assistant.desktop ada_deb/usr/share/applications/
 
-	@printf '#!/bin/bash\nset -e\n\n# Create the symbolic link\nln -sf /opt/ada/Ada /usr/local/bin/ada\n\n#' > ada_deb/DEBIAN/postinst
+	@printf '#!/bin/bash\nset -e\nln -sf /opt/ada/ada-launcher /usr/local/bin/ada\n' > ada_deb/DEBIAN/postinst
 	@chmod 755 ada_deb/DEBIAN/postinst
 
 	@printf '#!/bin/bash\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm

@@ -907,13 +907,18 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                             }
 
                                             int devNull = open("/dev/null", O_WRONLY);
-
+                                            
                                             dup2(devNull, STDOUT_FILENO);
                                             dup2(devNull, STDERR_FILENO);
-                                            close(devNull);
+                                            close(devNull); 
 
                                             setsid();
-                                            char* args[] = {const_cast<char*>(app_name.c_str()), NULL};
+
+                                            char* args[] = {
+                                                const_cast<char*>(app_name.c_str()), 
+                                                NULL
+                                            };
+
                                             execvp(args[0], args);
                                             exit(1);
                                         }
@@ -952,8 +957,12 @@ void GUI::RenderGui(AI_ENGINE &AI) {
 
                                         SYSCMD.detach();
                                     #else
-                                        std::string backgroundCmd = cmd + " &";
-                                        system(backgroundCmd.c_str());
+                                            std::thread SYSCMD([cmd]() {
+                                                std::string command = "x-terminal-emulator -e " + cmd + " &";
+                                                system(command.c_str());
+                                            });
+
+                                            SYSCMD.detach();
                                     #endif
                                 }
                             }

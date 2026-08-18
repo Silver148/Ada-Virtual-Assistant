@@ -22,6 +22,7 @@ main.c
 #include <memory>
 #if defined(__linux__) || defined(__unix__)
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/resource.h>
 #include <sys/syscall.h>
 #include "main.hpp"
@@ -47,14 +48,12 @@ std::string get_config_path() {
 }
 
 std::string get_base_dir() {
-
-    char buffer[PATH_MAX];
-    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-    if (len != -1) {
-        buffer[len] = '\0';
-        return std::string(dirname(buffer));
+    try {
+        fs::path exe_path = fs::read_symlink("/proc/self/exe");
+        return exe_path.parent_path().string();
+    } catch (const fs::filesystem_error& e) {
+        return "";
     }
-    return "";
 }
 #endif
 
@@ -137,16 +136,13 @@ std::vector<std::string> AIModels = {
 
 std::string defaultAIModel = "";
 
-int main(){
-
-    #if defined(__linux__) || defined(__unix__)
-        if (!isatty(fileno(stdin))) {
-            system("x-terminal-emulator -e \"./Ada\" &");
-            exit(0);
-        }
-    #endif
+int main(int argc, char* argv[]){
     
     std::unique_ptr<AI_ENGINE> AI;
+
+#if defined(__linux__) || defined(__unix__)
+    const bool setupOnly = argc > 1 && std::string(argv[1]) == "--setup-only";
+#endif
 
     #if defined(_WIN32) || defined(_WIN64)
     std::string KeyPath = "api_key.txt";
@@ -168,6 +164,26 @@ int main(){
         OpenKeyFile.close();
         OpenDefaultModelFile.close();
     }else{
+    #if defined(__linux__) || defined(__unix__)
+        if (!setupOnly) {
+            const std::string executablePath = fs::read_symlink("/proc/self/exe").string();
+            pid_t terminalPid = fork();
+
+            if (terminalPid < 0) {
+                return 1;
+            }
+
+            if (terminalPid == 0) {
+                execlp("x-terminal-emulator", "x-terminal-emulator", "-e",
+                    "bash", "-c", "exec \"$1\" --setup-only; echo; read -p 'Presiona Enter para cerrar...'",
+                    "ada-setup", executablePath.c_str(), (char*)NULL);
+                _exit(1);
+            }
+
+            return 0;
+        }
+    #endif
+
     #if defined(_WIN32) || defined(_WIN64)
         if(AllocConsole()){
             FILE* fpIn = nullptr;
@@ -433,6 +449,37 @@ int main(){
     #endif
     }
 
+#if defined(__linux__) || defined(__unix__)
+    if (setupOnly) {
+        if (!AI) {
+            return 1;
+        }
+
+        pid_t applicationPid = fork();
+
+        if (applicationPid < 0) {
+            return 1;
+        }
+
+        if (applicationPid == 0) {
+            setsid();
+
+            int devNull = open("/dev/null", O_RDWR);
+            if (devNull >= 0) {
+                dup2(devNull, STDIN_FILENO);
+                dup2(devNull, STDOUT_FILENO);
+                dup2(devNull, STDERR_FILENO);
+                close(devNull);
+            }
+
+            execl("/proc/self/exe", "Ada", (char*)NULL);
+            _exit(1);
+        }
+
+        return 0;
+    }
+#endif
+
     if (!AI) {
         std::cerr << "Fatal Error: AI_ENGINE failed to init" << std::endl;
         return 1;
@@ -441,6 +488,10 @@ int main(){
 #if defined(_WIN32) || defined(_WIN64)
     GUI gui = GUI();
 #else
+    SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
+    SDL_SetHint(SDL_HINT_APP_NAME, "Ada Virtual Assistant");
+    setenv("SDL_VIDEO_X11_WMCLASS", "ada-virtual-assistant", 1);
+
     if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0){
         throw std::runtime_error("Error to init SDL!");
     }
