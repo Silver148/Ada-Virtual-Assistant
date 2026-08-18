@@ -47,6 +47,7 @@ Para compilar y correr este proyecto desde cero, necesitas las siguientes herram
 
 ### Dependencias en Linux (Ubuntu/Debian)
 * **Compilador:** `g++` con soporte para C++17 o superior.
+* **NSIS (opcional):** necesario para compilar el instalador (setup) de Windows mediante cross compiling.
 * **Librerías de Desarrollo:**
 ```bash
 sudo apt install build-essential cmake libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev libttspico-dev libnotify-dev libcurl4-openssl-dev
@@ -56,6 +57,7 @@ sudo apt install build-essential cmake libsdl2-dev libsdl2-image-dev libsdl2-ttf
 ### Dependencias para Windows(MinGW/MSYS2)
 * **Compilador:** `g++` con soporte para C++17 o superior(x86_64).
 * **Generador de código automatizado**: `cmake` en su última versión(recomendablemente).
+* **NSIS (obligatorio):** necesario para compilar el instalador (setup) de Windows.
 * **Librerías gráficas: SDL2, SDL2_image, SDL2_ttf**
 * **Librería de red: `libcurl`**
 * * **Parser JSON: `nlohmann-json que ya está en ./include`**

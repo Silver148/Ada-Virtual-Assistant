@@ -207,6 +207,7 @@ make_debian_package:
 
 pack_for_windows:
 	zip -r Ada-$(VERSION)-Windows-x64.zip Ada_packed/
+	makensis -DPRODUCT_VERSION=$(VERSION) win_setup/setup.nsi
 	@echo "Ada $(VERSION) was packed for Windows :D!"
 
 install_debian_package:
