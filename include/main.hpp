@@ -7,10 +7,8 @@
 
 namespace fs = std::filesystem;
 
-    #if defined(__linux__) || defined(__unix__)
-    std::string get_config_path();
-    std::string get_base_dir();
+std::string get_config_path();
+std::string get_base_dir();
 
-    #endif
 
 #endif

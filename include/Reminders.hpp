@@ -17,9 +17,9 @@
     extern "C" {
         #include <libnotify/notify.h>
     }
-    #include "main.hpp"
 #endif
 #include "json.hpp"
+#include "main.hpp"
 
 using json = nlohmann::json;
 

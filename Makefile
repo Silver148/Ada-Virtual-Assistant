@@ -59,7 +59,7 @@ ifeq ($(SYSTEM), Windows (MinGW))
     LIBS =  -static-libgcc -static-libstdc++ \
             -L$(CURL_LIB_DIR) -lcurl -L$(SDL2_LIB_DIR) -lSDL2 -lSDL2_image -lSDL2_mixer \
             -lSDL2_ttf -L$(MD4C_LIB_DIR) -L$(VOSK_WINDOWS) -lvosk -lmd4c \
-			-mwindows -lshell32 -lole32 -lsapi -lurlmon
+			-mwindows -lshell32 -lole32 -lsapi -lurlmon -luuid
 else
     INCS = -Iinclude -Imd4c/src $(shell pkg-config --cflags libnotify) -I$(VOSK_LINUX)
     LIBS = -lm -lpthread -lcurl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_ttf \

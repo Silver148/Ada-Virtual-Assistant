@@ -165,19 +165,19 @@ std::string defaultAIModel = "";
 
 int main(int argc, char* argv[]){
     
+    #if defined(_WIN32) || defined(_WIN64)
+    (void)argc; // Unused parameter
+    (void)argv; // Unused parameter
+    #endif
+
     std::unique_ptr<AI_ENGINE> AI;
 
 #if defined(__linux__) || defined(__unix__)
     const bool setupOnly = argc > 1 && std::string(argv[1]) == "--setup-only";
 #endif
 
-    #if defined(_WIN32) || defined(_WIN64)
-    std::string KeyPath = "api_key.txt";
-    std::string DefaultModelPath = "default_model.cfg";
-    #else
     std::string KeyPath = get_config_path() + "/api_key.txt";
     std::string DefaultModelPath = get_config_path() + "/default_model.cfg";
-    #endif
 
     std::ifstream OpenKeyFile(KeyPath);
     std::ifstream OpenDefaultModelFile(DefaultModelPath);
