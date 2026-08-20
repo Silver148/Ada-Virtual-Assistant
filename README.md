@@ -68,7 +68,7 @@ Para iniciar los submodulos(en este caso md4c y llama.cpp), ejecuta en la termin
  ```
 ---
 
-Si instalaste Ada para distros basadas en Debian(por el paquete .deb), se debe ejecutar desde la terminal con el comando:
+Si instalaste Ada para distros basadas en Debian(por el paquete .deb), se puede ejecutar desde la terminal con el comando:
 ```bash
 ada
 ```
