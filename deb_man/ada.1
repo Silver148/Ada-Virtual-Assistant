@@ -1,0 +1,52 @@
+.TH ADA 1 "August 2026" "v1.8.1" "Ada Manual"
+.SH NAME
+Ada \- Desktop Virtual Assistant.
+.SH SYNOPSIS
+.B ada
+.SH DESCRIPTION
+.B Ada
+is a desktop virtual assistant with a graphical user interface. It allows interaction with artificial intelligence models via OpenRouter and also offers a completely local, offline mode using a quantized GGUF model.
+.PP
+The application saves its configuration and conversation memory on the user's computer. When run for the first time, it prompts for initial setup to enter credentials and select the artificial intelligence model.
+.SH FEATURES
+.TP
+.B Artificial intelligence engine
+Low-latency connection with available models through OpenRouter.
+.TP
+.B Persistent memory
+Saves conversation history locally in a cyclic buffer named
+.I memories.json .
+.TP
+.B Text-to-speech
+Responds via voice in Spanish. On Windows it uses SAPI with the Microsoft Sabina voice; on Linux it uses PicoTTS.
+.TP
+.B Speech-to-text
+Uses Vosk to transcribe voice prompts. Press Shift+F1 inside the application to activate this feature and press Enter to send the transcribed text.
+.TP
+.B System control
+Can shut down or restart the computer, open applications and websites, execute system commands, and create reminders for today or tomorrow.
+.TP
+.B Interactive gestures
+Ada's expression changes depending on the topic of the conversation.
+.TP
+.B Offline mode
+Allows the use of a local model without an Internet connection. It requires at least 8 GB of RAM; 16 GB is recommended to use it while running multiple applications.
+.SH INITIAL CONFIGURATION
+The online mode requires an OpenRouter API key. Register or log in to OpenRouter, create an API key using the "New Key" option, and keep it in a safe place.
+.PP
+On the first launch, enter the API key when prompted by the application and choose the artificial intelligence model you wish to use.
+.SH USAGE
+To launch Ada from a terminal, execute:
+.PP
+.EX
+ada
+.EE
+.SH FILES
+.TP
+.I ~/.config/ada/
+Directory that stores Ada's configuration and the API key.
+.TP
+.I ~/.config/ada/AdaOffline.Q4_K_M.gguf
+Default location of the offline language model, if downloaded.
+.SH AUTHOR
+Juan Yaguaro (aka silverhacker)

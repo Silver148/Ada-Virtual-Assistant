@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include "json.hpp"
+#include "main.hpp"
 
 class SearchExe{
 

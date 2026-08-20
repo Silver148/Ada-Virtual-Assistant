@@ -112,7 +112,7 @@ std::string SearchExe::FindExe(const std::string& exeName) {
     std::transform(target.begin(), target.end(), target.begin(), ::tolower);
 
     if (discoveredAppsCache.empty()) {
-        LoadCache("cache.json");
+        LoadCache(get_config_path() + "/cache.json");
     }
 
     const char* userEnv = std::getenv("USERNAME");
@@ -177,7 +177,7 @@ std::string SearchExe::FindExe(const std::string& exeName) {
         fs::path fullPath = fs::path(path) / target;
         if (fs::exists(fullPath)) {
             discoveredAppsCache[target] = fullPath.string(); 
-            SaveCache("cache.json");
+            SaveCache(get_config_path() + "/cache.json");
             
             return fullPath.string();
         }
@@ -198,7 +198,7 @@ std::string SearchExe::FindExe(const std::string& exeName) {
 
         if (!foundResult.empty()) {
             discoveredAppsCache[target] = foundResult;
-            SaveCache("cache.json");
+            SaveCache(get_config_path() + "/cache.json");
 
             return foundResult;
         }

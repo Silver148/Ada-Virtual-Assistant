@@ -9,6 +9,7 @@
 #include <fstream>
 #include <thread>
 #include <atomic>
+#include "main.hpp"
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #else
@@ -17,9 +18,6 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#endif
-#if defined(__linux__) || (__unix__)
-#include "main.hpp"
 #endif
 
 using json = nlohmann::json;
@@ -36,7 +34,6 @@ private:
     json memories = json::array();;
 
     bool offline_ready = false;
-    std::string offline_model_path = "AdaOffline.Q4_K_M.gguf";
 
     bool StartLLamaServer();
     void StopLLamaServer();

@@ -12,7 +12,10 @@ main.c
 #include <fstream>
 #if defined(_WIN32) || defined(_WIN64)
     #include <windows.h>
+    #include <knownfolders.h>
+    #include <shlobj.h>
     #include <urlmon.h>
+
     #include <atomic>
 
     #include <filesystem>
@@ -22,10 +25,6 @@ main.c
 #include <memory>
 #if defined(__linux__) || defined(__unix__)
 #include <unistd.h>
-#include <fcntl.h>
-#include <sys/resource.h>
-#include <sys/syscall.h>
-#include "main.hpp"
 #endif
 #include "AI_Engine.hpp"
 #include "GUI.hpp"
@@ -33,8 +32,8 @@ main.c
 #undef main
 std::string API_KEY = "";
 
-#if defined(__linux__) || defined(__unix__)
 std::string get_config_path() {
+    #if defined(__linux__) || defined(__unix__)
     const char* home_dir = std::getenv("HOME");
     if (!home_dir) return "";
 
@@ -45,17 +44,45 @@ std::string get_config_path() {
     }
 
     return config_path.string();
+
+    #else
+    PWSTR path = nullptr;
+    std::wstring config_path = L"";
+
+    HRESULT hr = SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &path);
+
+    if(SUCCEEDED(hr)) {
+        config_path = path;
+        CoTaskMemFree(path);
+    }
+
+    fs::path final_path = fs::path(config_path) / "Ada";
+
+    if(!fs::exists(final_path)) {
+        fs::create_directories(final_path);
+    }
+
+    return final_path.string();
+    #endif
 }
 
 std::string get_base_dir() {
+    #if defined(__linux__) || defined(__unix__)
     try {
         fs::path exe_path = fs::read_symlink("/proc/self/exe");
         return exe_path.parent_path().string();
     } catch (const fs::filesystem_error& e) {
         return "";
     }
+
+    #else
+    wchar_t buffer[MAX_PATH] = { 0 };
+    GetModuleFileNameW(NULL, buffer, MAX_PATH);
+
+    return fs::path(buffer).parent_path().string();
+    #endif
 }
-#endif
+
 
 #if defined(_WIN32) || defined(_WIN64)
     bool DownloadOfflineModel(const std::string& url, const std::string& savePath){
@@ -86,7 +113,7 @@ std::string get_base_dir() {
             return false;
         } else if (pid == 0) {
 
-            execlp("sudo", "sudo", "wget", url.c_str(), "-O", savePath.c_str(), (char*)NULL);
+            execlp("wget", "wget", url.c_str(), "-O", savePath.c_str(), (char*)NULL);
         
             exit(1);
         } else {
@@ -293,7 +320,7 @@ int main(int argc, char* argv[]){
                                 sleep(2);
                                 Ready = true;
                             }else{
-                                fs::path target_path = fs::current_path() / "AdaOffline.Q4_K_M.gguf";
+                                fs::path target_path = get_config_path() + "/AdaOffline.Q4_K_M.gguf";
 
                                 std::cout << "Downloading offline model... This may take a few minutes." << std::endl;
                                 if(DownloadOfflineModel("https://huggingface.co/silverhacker/AdaOffline/resolve/main/AdaOffline.Q4_K_M.gguf", target_path.string())){
@@ -425,7 +452,7 @@ int main(int argc, char* argv[]){
                             sleep(2);
                             Ready = true;
                         }else{
-                            fs::path target_path = get_base_dir() + "/AdaOffline.Q4_K_M.gguf";
+                            fs::path target_path = get_config_path() + "/AdaOffline.Q4_K_M.gguf";
 
                             std::cout << "Downloading offline model... This may take a few minutes." << std::endl;
                             if(DownloadOfflineModel("https://huggingface.co/silverhacker/AdaOffline/resolve/main/AdaOffline.Q4_K_M.gguf", target_path.string())){

@@ -180,13 +180,33 @@ make_debian_package:
 	mkdir -p ada_deb/opt/ada/
 	mkdir -p ada_deb/DEBIAN
 	mkdir -p ada_deb/usr/share/applications/
+	mkdir -p ada_deb/usr/share/man/man1
+	
 	cp -r Ada_packed/* ada_deb/opt/ada/
 	cp desktop/ada-virtual-assistant.desktop ada_deb/usr/share/applications/
+
+	@mkdir -p ada_deb/usr/share/man/man1
+	cp deb_man/ada.1 ada_deb/usr/share/man/man1/ada.1
+	@build_date="$$(LC_ALL=C date '+%B %d, %Y')"; \
+		sed -i "1c.TH ADA 1 \"$$build_date\" \"v$(VERSION)\" \"Ada Manual\"" \
+		ada_deb/usr/share/man/man1/ada.1
+	gzip -n -f ada_deb/usr/share/man/man1/ada.1
+	@ln -sf ada.1.gz ada_deb/usr/share/man/man1/ada-assistant.1.gz
 
 	@printf '#!/bin/bash\nset -e\nln -sf /opt/ada/ada-launcher /usr/local/bin/ada\n' > ada_deb/DEBIAN/postinst
 	@chmod 755 ada_deb/DEBIAN/postinst
 
-	@printf '#!/bin/bash\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm
+	@printf '#!/bin/bash\nset -e\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm
+	@printf '%s\n' \
+		'getent passwd | while IFS=: read -r _ _ _ _ _ home _; do' \
+		'    if [ -n "$$home" ]; then' \
+		'        rm -f -- "$$home/.config/AdaOffline.Q4_K_M.gguf" 2>/dev/null' \
+		'        rm -rf -- "$$home/.config/ada" 2>/dev/null' \
+		'    fi' \
+		'done' \
+		>> ada_deb/DEBIAN/prerm
+
+	@printf 'rm -f /usr/share/applications/ada-virtual-assistant.desktop\n' >> ada_deb/DEBIAN/prerm
 	@chmod 755 ada_deb/DEBIAN/prerm
 
 	@printf '%s\n' \

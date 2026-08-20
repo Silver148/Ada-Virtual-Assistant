@@ -62,11 +62,7 @@ AI_ENGINE::AI_ENGINE(const std::string& model){
     AI_config["include_reasoning"] = false;
     AI_config["stream"] = false;
 
-    #if defined(__linux__) || defined(__unix__)
     LoadMemories(get_config_path() + "/memories.json");
-    #else
-    LoadMemories("memories.json");
-    #endif
 }
 
 AI_ENGINE::~AI_ENGINE() {
@@ -101,7 +97,7 @@ bool AI_ENGINE::IsOfflineModelDownloaded(const std::string &model_path) {
 bool AI_ENGINE::StartLLamaServer() {
     server = std::make_unique<Server>();
 
-    std::filesystem::path model_path(offline_model_path);
+    std::filesystem::path model_path(get_config_path() + "/AdaOffline.Q4_K_M.gguf");
     
     #if defined(_WIN32) || defined(_WIN64)
 
@@ -224,8 +220,8 @@ bool AI_ENGINE::IsOfflineReady() const {
 bool AI_ENGINE::InitOfflineMode() {
     if (offline_ready) return true;
 
-    if (!IsOfflineModelDownloaded(offline_model_path)) {
-        std::cerr << "Offline model not found: " << offline_model_path << std::endl;
+    if (!IsOfflineModelDownloaded(get_config_path() + "/AdaOffline.Q4_K_M.gguf")) {
+        std::cerr << "Offline model not found: " << get_config_path() + "/AdaOffline.Q4_K_M.gguf" << std::endl;
         return false;
     }
 
@@ -251,11 +247,7 @@ void AI_ENGINE::DeinitOfflineMode() {
 }
 
 std::string AI_ENGINE::SendPrompt(const std::string &Prompt, bool useOffline, bool saveMemory) {
-    #if defined(__linux__) || defined(__unix__)
     LoadMemories(get_config_path() + "/memories.json");
-    #else
-    LoadMemories("memories.json");
-    #endif
 
     if (useOffline && !offline_ready) {
         return "Error local: el servidor offline no está listo.";
@@ -338,11 +330,8 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt, bool useOffline, bo
                     if (saveMemory) {
                         memories.push_back({{"role", "user"}, {"content", Prompt}});
                         memories.push_back({{"role", "assistant"}, {"content", final_reply}});
-                        #if defined(__linux__) || defined(__unix__)
+                        
                         SaveMemories(get_config_path() + "/memories.json");
-                        #else
-                        SaveMemories("memories.json");
-                        #endif
                     }
                 } else if (response.contains("error")) {
                     std::string error_msg = "Desconocido";

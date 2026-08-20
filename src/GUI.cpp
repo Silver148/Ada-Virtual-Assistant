@@ -27,7 +27,10 @@ GUI::GUI() : voice(), stt() {
         throw std::runtime_error("Error to create renderer");
     }
 
-    Ada_SpriteSheet_surface = IMG_Load("Ada_SpriteSheet.png");
+    std::string base = get_base_dir();
+    std::string spritesheet_path = base + "/Ada_SpriteSheet.png";
+
+    Ada_SpriteSheet_surface = IMG_Load(spritesheet_path.c_str());
 
     if (Ada_SpriteSheet_surface) {
         Ada_SpriteSheet_texture = SDL_CreateTextureFromSurface(renderer, Ada_SpriteSheet_surface);
@@ -47,7 +50,7 @@ GUI::GUI() : voice(), stt() {
     Ada_dest_rect.w = FRAME_WIDTH;
     Ada_dest_rect.h = FRAME_HEIGHT;
 
-    std::string TextFontPath = "fonts/Segoe-UI-EMOJI.ttf";
+    std::string TextFontPath = base + "/fonts/Segoe-UI-EMOJI.ttf";
 
     UserTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
     AdaTextFont = TTF_OpenFont(TextFontPath.c_str(), 20);
@@ -517,7 +520,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     if(mouseX >= ModeButton.x && mouseX <= (ModeButton.x + ModeButton.w) &&
                         mouseY >= ModeButton.y && mouseY <= (ModeButton.y + ModeButton.h)) {
 
-                        if(!LocalMode && AI.IsOfflineModelDownloaded("AdaOffline.Q4_K_M.gguf")){
+                        if(!LocalMode && AI.IsOfflineModelDownloaded(get_config_path() + "/AdaOffline.Q4_K_M.gguf")){
                             if (!switchingToOffline) {
                                 switchingToOffline = true;
                                 offlineSwitchResult = 0;
@@ -958,7 +961,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                                         SYSCMD.detach();
                                     #else
                                             std::thread SYSCMD([cmd]() {
-                                                std::string command = "x-terminal-emulator -e " + cmd + " &";
+                                                std::string command = "x-terminal-emulator -e \"bash -c '" + cmd + "; exec bash'\" &";
                                                 system(command.c_str());
                                             });
 
