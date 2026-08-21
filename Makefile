@@ -98,7 +98,6 @@ compile_md4c:
 			cmake -B md4c/build -G $(CMAKE_GENERATOR) \
 				-DCMAKE_SYSTEM_NAME=Windows \
 				-DCMAKE_C_COMPILER=$(CC) \
-				-DCMAKE_CXX_COMPILER=$(CPP) \
 				md4c; \
 		else \
 			cmake -B md4c/build -G "Unix Makefiles" md4c; \
@@ -120,10 +119,12 @@ compile_llama-server:
 				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
 				-DCMAKE_BUILD_TYPE=Release \
 				-DGGML_OPENMP=ON \
-				-DGGML_BACKEND_DL=ON \
-				-DGGML_CPU_ALL_VARIANTS=ON \
+				-DGGML_BACKEND_DL=OFF \
+				-DGGML_CPU_ALL_VARIANTS=OFF \
 				-DGGML_CUDA=OFF \
-				-DBUILD_SHARED_LIBS=ON \
+				-DBUILD_SHARED_LIBS=OFF \
+				-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++ -fopenmp -static" \
+				-DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v2" \
 				-DLLAMA_BUILD_EXAMPLES=OFF \
 				-DLLAMA_BUILD_TESTS=OFF \
 				-DLLAMA_BUILD_TOOLS=ON \
@@ -135,10 +136,12 @@ compile_llama-server:
 				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
 				-DCMAKE_BUILD_TYPE=Release \
 				-DGGML_OPENMP=ON \
-				-DGGML_BACKEND_DL=ON \
-				-DGGML_CPU_ALL_VARIANTS=ON \
+				-DGGML_BACKEND_DL=OFF \
+				-DGGML_CPU_ALL_VARIANTS=OFF \
 				-DGGML_CUDA=OFF \
-				-DBUILD_SHARED_LIBS=ON \
+				-DBUILD_SHARED_LIBS=OFF \
+				-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++ -fopenmp" \
+				-DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v2" \
 				-DLLAMA_BUILD_EXAMPLES=OFF \
 				-DLLAMA_BUILD_TESTS=OFF \
 				-DLLAMA_BUILD_TOOLS=ON \
@@ -148,7 +151,6 @@ compile_llama-server:
 		fi; \
 		$(MAKE_CMD) -j3 -C llama.cpp/build llama-server; \
 	fi
-
 
 pack_exe:
 	mkdir -p Ada_packed
