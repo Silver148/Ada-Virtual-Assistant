@@ -98,6 +98,8 @@ bool AI_ENGINE::StartLLamaServer() {
     server = std::make_unique<Server>();
 
     std::filesystem::path model_path(get_config_path() + "/AdaOffline.Q4_K_M.gguf");
+    const unsigned int hardware_threads = std::thread::hardware_concurrency();
+    const unsigned int server_threads = hardware_threads > 0 ? hardware_threads : 1;
     
     #if defined(_WIN32) || defined(_WIN64)
 
@@ -106,7 +108,8 @@ bool AI_ENGINE::StartLLamaServer() {
         std::string cmd = "\"" + server_path.string() + "\"" + 
                 " -m \"" + model_path.string() + "\"" + 
                 " --port 8080" + 
-                " -t 3 -tb 3" + 
+                " -t " + std::to_string(server_threads) +
+                " -tb " + std::to_string(server_threads) +
                 " --temp 0.2";
 
         std::vector<char> cmdBuffer(cmd.begin(), cmd.end());
@@ -147,7 +150,8 @@ bool AI_ENGINE::StartLLamaServer() {
             execl(server_path.c_str(), "llama-server", 
                 "-m", model_path.c_str(), 
                 "--port", "8080", 
-                "-t", "3", "-tb", "3", 
+                "-t", std::to_string(server_threads).c_str(),
+                "-tb", std::to_string(server_threads).c_str(),
                 "--temp", "0.2", 
                 (char*)NULL);
 
@@ -232,9 +236,9 @@ bool AI_ENGINE::InitOfflineMode() {
 
     if (IsOfflineReady()) {
 
-        SendPrompt("Calentando motores", true, false);
         offline_ready = true;
         system_prompt = offline_system_prompt;
+        SendPrompt("Calentando motores", true, false);
     }
 
     return true;

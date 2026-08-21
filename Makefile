@@ -3,6 +3,7 @@ CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
 DEBUG ?= 0
+BUILD_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 3)
 
 ifeq ($(OS),Windows_NT)
 	CROSS = 1
@@ -37,9 +38,18 @@ SRC_DIR = src
 OBJ_DIR = obj
 CURL_LIB_DIR = curl/lib/
 SDL2_LIB_DIR = SDL2-Mingw/x86_64-w64-mingw32/lib/
-MD4C_LIB_DIR = md4c/build/src/
 VOSK_LINUX = vosk_linux/
 VOSK_WINDOWS = vosk_win64/
+
+ifeq ($(SYSTEM), Windows (MinGW))
+	MD4C_BUILD_DIR = md4c/build-windows
+	LLAMA_BUILD_DIR = llama.cpp/build-windows
+else
+	MD4C_BUILD_DIR = md4c/build-linux
+	LLAMA_BUILD_DIR = llama.cpp/build-linux
+endif
+
+MD4C_LIB_DIR = $(MD4C_BUILD_DIR)/src/
 
 CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -Wshadow -Wformat=2
 
@@ -89,68 +99,66 @@ $(RES_OBJ): resource.rc
 endif
 
 compile_md4c:
-	@if [ -d "md4c/build" ]; then \
-		echo "Dependency md4c already compiled. Skipping."; \
+	@echo "Compiling md4c dependence on $(SYSTEM)..."
+	@mkdir -p $(MD4C_BUILD_DIR)
+	@if [ "$(SYSTEM)" = "Windows (MinGW)" ]; then \
+		cmake -B $(MD4C_BUILD_DIR) -G $(CMAKE_GENERATOR) \
+			-DCMAKE_SYSTEM_NAME=Windows \
+			-DCMAKE_C_COMPILER=$(CC) \
+			md4c; \
 	else \
-		echo "Compiling md4c dependence on $(SYSTEM)..."; \
-		mkdir -p md4c/build; \
-		if [ "$(SYSTEM)" = "Windows (MinGW)" ]; then \
-			cmake -B md4c/build -G $(CMAKE_GENERATOR) \
-				-DCMAKE_SYSTEM_NAME=Windows \
+			cmake -B $(MD4C_BUILD_DIR) -G "Unix Makefiles" \
+				-DCMAKE_SYSTEM_NAME=Linux \
 				-DCMAKE_C_COMPILER=$(CC) \
 				md4c; \
-		else \
-			cmake -B md4c/build -G "Unix Makefiles" md4c; \
-		fi; \
-		$(MAKE_CMD) -j3 -C md4c/build; \
 	fi
+		$(MAKE_CMD) -j$(BUILD_JOBS) -C $(MD4C_BUILD_DIR)
 
 compile_llama-server:
-	@if [ -d "llama.cpp/build" ]; then \
-		echo "Universal llama-server already compiled. Skipping."; \
-	else \
-		echo "Compiling UNIVERSAL llama-server (Smart Dynamic CPU) on $(SYSTEM)..."; \
-		mkdir -p llama.cpp/build; \
-		if [ "$(SYSTEM)" = "Windows (MinGW)" ]; then \
-			cmake -B llama.cpp/build -G $(CMAKE_GENERATOR) \
+	@echo "Compiling UNIVERSAL llama-server (Smart Dynamic CPU) on $(SYSTEM)..."
+		@mkdir -p $(LLAMA_BUILD_DIR)
+	@if [ "$(SYSTEM)" = "Windows (MinGW)" ]; then \
+			cmake -B $(LLAMA_BUILD_DIR) -G $(CMAKE_GENERATOR) \
 				-DCMAKE_SYSTEM_NAME=Windows \
 				-DCMAKE_C_COMPILER=$(CC) \
 				-DCMAKE_CXX_COMPILER=$(CPP) \
 				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
 				-DCMAKE_BUILD_TYPE=Release \
 				-DGGML_OPENMP=ON \
-				-DGGML_BACKEND_DL=OFF \
-				-DGGML_CPU_ALL_VARIANTS=OFF \
+				-DGGML_BACKEND_DL=ON \
+				-DGGML_CPU_ALL_VARIANTS=ON \
 				-DGGML_CUDA=OFF \
-				-DBUILD_SHARED_LIBS=OFF \
-				-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++ -fopenmp -static" \
-				-DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v2" \
+				-DBUILD_SHARED_LIBS=ON \
+				-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++" \
 				-DLLAMA_BUILD_EXAMPLES=OFF \
 				-DLLAMA_BUILD_TESTS=OFF \
 				-DLLAMA_BUILD_TOOLS=ON \
 				-DLLAMA_BUILD_SERVER=ON \
+				-DLLAMA_BUILD_UI=OFF \
 				-DLLAMA_BUILD_APP=OFF \
 				llama.cpp; \
-		else \
-			cmake -B llama.cpp/build -G "Unix Makefiles" \
+	else \
+		cmake -B $(LLAMA_BUILD_DIR) -G "Unix Makefiles" \
+				-DCMAKE_SYSTEM_NAME=Linux \
+				-DCMAKE_C_COMPILER=$(CC) \
+				-DCMAKE_CXX_COMPILER=$(CPP) \
 				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
 				-DCMAKE_BUILD_TYPE=Release \
 				-DGGML_OPENMP=ON \
-				-DGGML_BACKEND_DL=OFF \
-				-DGGML_CPU_ALL_VARIANTS=OFF \
+				-DGGML_BACKEND_DL=ON \
+				-DGGML_CPU_ALL_VARIANTS=ON \
 				-DGGML_CUDA=OFF \
-				-DBUILD_SHARED_LIBS=OFF \
-				-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++ -fopenmp" \
-				-DCMAKE_CXX_FLAGS="-O3 -march=x86-64-v2" \
+				-DBUILD_SHARED_LIBS=ON \
+				-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc -static-libstdc++" \
 				-DLLAMA_BUILD_EXAMPLES=OFF \
 				-DLLAMA_BUILD_TESTS=OFF \
 				-DLLAMA_BUILD_TOOLS=ON \
 				-DLLAMA_BUILD_SERVER=ON \
+				-DLLAMA_BUILD_UI=OFF \
 				-DLLAMA_BUILD_APP=OFF \
 				llama.cpp; \
-		fi; \
-		$(MAKE_CMD) -j3 -C llama.cpp/build llama-server; \
 	fi
+	$(MAKE_CMD) -j$(BUILD_JOBS) -C $(LLAMA_BUILD_DIR) llama-server
 
 pack_exe:
 	mkdir -p Ada_packed
@@ -158,7 +166,7 @@ pack_exe:
 	cp -rf fonts Ada_packed/fonts
 	cp Ada_SpriteSheet.png Ada_packed/Ada_SpriteSheet.png
 	cp -rf vosk_model Ada_packed/vosk_model
-	cp -f llama.cpp/build/bin/* Ada_packed/
+	cp -f $(LLAMA_BUILD_DIR)/bin/* Ada_packed/
 ifeq ($(SYSTEM), Windows (MinGW))
 	cp curl/bin/libcurl-x64.dll Ada_packed/libcurl-x64.dll
 	cp -f SDL2-Mingw/x86_64-w64-mingw32/bin/*.dll Ada_packed/
@@ -236,8 +244,8 @@ install_debian_package:
 	sudo apt install ./ada-assistant_$(VERSION)_amd64.deb
 
 clean_all:
-	@rm -rf md4c/build
-	@rm -rf llama.cpp/build
+	@rm -rf md4c/build-linux md4c/build-windows
+	@rm -rf llama.cpp/build-linux llama.cpp/build-windows
 	@rm -rf $(OBJ_DIR) *.exe Ada
 	@rm -rf Ada_packed
 	@rm -f *.deb
