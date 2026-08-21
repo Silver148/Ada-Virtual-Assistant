@@ -307,7 +307,7 @@ std::string AI_ENGINE::SendPrompt(const std::string &Prompt, bool useOffline, bo
         curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
         
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, useOffline ? 45L : 120L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, useOffline ? 300L : 120L);
         
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
         curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
