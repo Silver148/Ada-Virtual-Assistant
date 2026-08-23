@@ -18,8 +18,8 @@ ifeq ($(OS),Windows_NT)
 	CPP = g++
     CC  = gcc   
 else
-	CPP = x86_64-w64-mingw32-g++-posix
-    CC  = x86_64-w64-mingw32-gcc-posix
+	CPP = x86_64-w64-mingw32-g++
+    CC  = x86_64-w64-mingw32-gcc
 endif
 
     WINDRES = x86_64-w64-mingw32-windres
