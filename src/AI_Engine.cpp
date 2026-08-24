@@ -103,7 +103,7 @@ bool AI_ENGINE::StartLLamaServer() {
     
     #if defined(_WIN32) || defined(_WIN64)
 
-        std::filesystem::path server_path = "llama-server.exe";
+        std::filesystem::path server_path = "llama/llama-server.exe";
 
         std::string cmd = "\"" + server_path.string() + "\"" + 
                 " -m \"" + model_path.string() + "\"" + 
@@ -132,7 +132,7 @@ bool AI_ENGINE::StartLLamaServer() {
         CloseHandle(pi.hThread);
         server->hProcess = pi.hProcess;
     #else
-        std::filesystem::path server_path = "llama-server";
+        std::filesystem::path server_path = "llama/llama-server";
 
         pid_t pid = fork();
 

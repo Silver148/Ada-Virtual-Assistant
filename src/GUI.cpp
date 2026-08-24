@@ -506,7 +506,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     }
                 }
             } else if (e.type == SDL_MOUSEBUTTONDOWN) {
-                if (e.button.button == SDL_BUTTON_LEFT) { // Clic izquierdo
+                if (e.button.button == SDL_BUTTON_LEFT) {
                     int mouseX = e.button.x;
                     int mouseY = e.button.y;
 
@@ -661,6 +661,7 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                 }
             } else if (e.type == SDL_KEYDOWN) {
                 bool shift = (e.key.keysym.mod & KMOD_SHIFT);
+                bool ctrl = (e.key.keysym.mod & KMOD_LCTRL);
 
                 if (e.key.keysym.sym == SDLK_F1 && shift) {
                     if (e.key.repeat == 0) {
@@ -769,6 +770,32 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                         SDL_SetWindowFullscreen(window, 0);
                         fullscreen = false;
                     }
+                }else if(e.key.keysym.sym == SDLK_v && ctrl){
+                    
+                    if(SDL_HasClipboardText()){
+                        UserText.insert(cursorIndex, SDL_GetClipboardText());
+                        cursorIndex += strlen(SDL_GetClipboardText());
+
+                        if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
+                        if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
+
+                        UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
+                        UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
+
+                        UserTextRect.x = UserArea.x + 20;
+                        UserTextRect.y = UserArea.y + 20;
+                        UserTextRect.w = UserTextSurface->w;
+                        UserTextRect.h = UserTextSurface->h;
+
+                        if (UserTextRect.h > (UserArea.h - 40)) {
+                            maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
+                            userScrollY = maxUserScrollY; 
+                        } else {
+                            maxUserScrollY = 0;
+                            userScrollY = 0;
+                        }
+                    }
+
                 } else if (e.key.keysym.sym == SDLK_RETURN && !UserText.empty() && !IsThinking) {
                     std::string prompt = UserText;
                     UserText = "";
@@ -1280,7 +1307,8 @@ void GUI::RenderGui(AI_ENGINE &AI) {
             }
 
             if (cursorIndex > 0) {
-                while (cursorIndex > 0 && (static_cast<unsigned char>(UserText[cursorIndex]) & 0xC0) == 0x80) {
+                while (cursorIndex > 0 &&
+                       (static_cast<unsigned char>(UserText[cursorIndex - 1]) & 0xC0) == 0x80) {
                     cursorIndex--;
                 }
             }
@@ -1346,33 +1374,45 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                         i = endOfWord;
                     } else {
                         while (i < endOfWord) {
-                            unsigned char c = (unsigned char)UserText[i];
+                            unsigned char c = static_cast<unsigned char>(UserText[i]);
+
                             int charLen = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
-                            if (i >= cursorIndex) break;
 
-                            std::string sub = UserText.substr(i, charLen);
-                            int charW, charH;
-                            TTF_SizeUTF8(UserTextFont, sub.c_str(), &charW, &charH);
+                            charLen = std::min(charLen, static_cast<int>(endOfWord - i));
 
-                            if (simulatedW + charW > maxWidth && simulatedW > 0) {
+                            size_t nextIndex = i + charLen;
+                            std::string candidate = UserText.substr(lineStartIndex, nextIndex - lineStartIndex);
+
+                            int candidateW = 0;
+                            int candidateH = 0;
+
+                            TTF_SizeUTF8(UserTextFont, candidate.c_str(), &candidateW, &candidateH);
+
+                            if (candidateW > maxWidth && simulatedW > 0) {
                                 rows++;
-                                lineStartIndex = i; 
+                                lineStartIndex = i;
                                 simulatedW = 0;
+
+                                candidate = UserText.substr(i, charLen);
+
+                                TTF_SizeUTF8(UserTextFont, candidate.c_str(), &candidateW, &candidateH);
                             }
 
-                            simulatedW += charW;
-                            i += charLen;
+                            simulatedW = candidateW;
+                            i = nextIndex;
                         }
                     }
                 }
 
-                if (cursorIndex > lineStartIndex) {
-                    std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
-                    int dummyH;
+                std::string finalLineStr = UserText.substr(lineStartIndex, cursorIndex - lineStartIndex);
+                int dummyH = 0;
+                if (!finalLineStr.empty()) {
                     TTF_SizeUTF8(UserTextFont, finalLineStr.c_str(), &currentLineW, &dummyH);
+                } else {
+                    currentLineW = 0;
                 }
 
-                int cursorX = UserArea.x + padding + currentLineW - 2;
+                int cursorX = UserTextRect.x + currentLineW;
                 int cursorY = UserArea.y + padding + (rows * lineHeight) - userScrollY;
 
                 if ((SDL_GetTicks() / 500) % 2 == 0) {

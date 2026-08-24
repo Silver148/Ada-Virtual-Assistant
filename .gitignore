@@ -1,8 +1,4 @@
 Ada_packed/
-md4c/build-windows
-md4c/build-linux
-llama.cpp/build-windows
-llama.cpp/build-linux
 ada_deb/
 Ada
 obj

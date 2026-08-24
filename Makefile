@@ -1,4 +1,4 @@
-VERSION = 1.8.1
+VERSION = 1.8.2
 CROSS ?= 0
 CMAKE_GENERATOR = "Unix Makefiles"
 MAKE_CMD = $(MAKE)
@@ -7,8 +7,6 @@ BUILD_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null
 
 ifeq ($(OS),Windows_NT)
 	CROSS = 1
-else
-	CROSS = 0
 endif
 
 ifeq ($(CROSS), 1)
@@ -32,6 +30,25 @@ else
     CC  = gcc
     SOURCES = $(filter-out $(SRC_DIR)/SearchEXE.cpp, $(wildcard $(SRC_DIR)/*.cpp))
     RES_OBJ =
+endif
+
+MINGW_OPENMP_ARGS =
+ifeq ($(CROSS), 1)
+ifneq ($(OS),Windows_NT)
+CC_PATH := $(shell dirname $(shell which $(CC) 2>/dev/null))
+MINGW_GOMP_LIBRARY := $(shell find $(CC_PATH)/../lib -name "libgomp.a" 2>/dev/null | head -n 1)
+MINGW_PTHREAD_DLL := $(shell find $(CC_PATH)/../x86_64-w64-mingw32/bin -name "libwinpthread-1.dll" 2>/dev/null | head -n 1)
+
+ifneq ($(wildcard $(MINGW_GOMP_LIBRARY)),)
+MINGW_OPENMP_ARGS = \
+    -DOpenMP_C_FLAGS="-fopenmp" \
+    -DOpenMP_CXX_FLAGS="-fopenmp" \
+    -DOpenMP_C_LIB_NAMES="gomp" \
+    -DOpenMP_CXX_LIB_NAMES="gomp" \
+    -DOpenMP_gomp_LIBRARY="$(MINGW_GOMP_LIBRARY)" \
+    -DOpenMP_gomp_CXX_LIBRARY="$(MINGW_GOMP_LIBRARY)"
+endif
+endif
 endif
 
 SRC_DIR = src
@@ -125,6 +142,8 @@ compile_llama-server:
 				-DCMAKE_SYSTEM_PROCESSOR=x86_64 \
 				-DCMAKE_BUILD_TYPE=Release \
 				-DGGML_OPENMP=ON \
+				$(MINGW_OPENMP_ARGS) \
+				-DCMAKE_C_COMPILER_TARGET=x86_64-w64-mingw32 \
 				-DGGML_BACKEND_DL=ON \
 				-DGGML_CPU_ALL_VARIANTS=ON \
 				-DGGML_CUDA=OFF \
@@ -162,15 +181,17 @@ compile_llama-server:
 
 pack_exe:
 	mkdir -p Ada_packed
+	mkdir -p Ada_packed/llama
 	cp $(EXE) Ada_packed/$(EXE)
 	cp -rf fonts Ada_packed/fonts
 	cp Ada_SpriteSheet.png Ada_packed/Ada_SpriteSheet.png
 	cp -rf vosk_model Ada_packed/vosk_model
-	cp -f $(LLAMA_BUILD_DIR)/bin/* Ada_packed/
+	cp -f $(LLAMA_BUILD_DIR)/bin/* Ada_packed/llama
 ifeq ($(SYSTEM), Windows (MinGW))
 	cp curl/bin/libcurl-x64.dll Ada_packed/libcurl-x64.dll
 	cp -f SDL2-Mingw/x86_64-w64-mingw32/bin/*.dll Ada_packed/
 	cp -f vosk_win64/*.dll Ada_packed/
+	cp -f $(MINGW_PTHREAD_DLL) Ada_packed/llama
 else
 	rm -f Ada_packed/libmd4c.so Ada_packed/libmd4c.so.0
 	cp -f $(MD4C_LIB_DIR)/libmd4c.so Ada_packed/libmd4c.so
