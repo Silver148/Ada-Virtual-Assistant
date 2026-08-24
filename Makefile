@@ -229,13 +229,53 @@ make_debian_package:
 
 	@printf '#!/bin/bash\nset -e\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm
 	@printf '%s\n' \
-		'getent passwd | while IFS=: read -r _ _ _ _ _ home _; do' \
-		'    if [ -n "$$home" ]; then' \
-		'        rm -f -- "$$home/.config/AdaOffline.Q4_K_M.gguf" 2>/dev/null' \
-		'        rm -rf -- "$$home/.config/ada" 2>/dev/null' \
-		'    fi' \
-		'done' \
-		>> ada_deb/DEBIAN/prerm
+	    'clear' \
+	    'printf "\\033[46m\\033[2J\\033[H"' \
+	    'trap '\''printf "\\033[0m\\n"'\'' EXIT' \
+	    'choice=0' \
+	    'esc=$$(printf "\\033")' \
+	    'while :; do' \
+	    '    cols=$$(tput cols 2>/dev/null || echo 80)' \
+	    '    rows=$$(tput lines 2>/dev/null || echo 24)' \
+	    '    printf "\\033[46m\\033[2J\\033[H"' \
+	    '    row=0' \
+	    '    while [ "$$row" -lt "$$rows" ]; do' \
+	    '        printf "%*s\\n" "$$cols" ""' \
+	    '        row=$$((row + 1))' \
+	    '    done' \
+	    '    printf "\\033[H"' \
+	    '    printf "\\nAda settings\\n\\n"' \
+	    '    if [ "$$choice" -eq 0 ]; then' \
+	    '        printf "\\033[7m> Keep Ada'\''s settings\\033[0m\\n  Remove Ada'\''s settings\\n\\nUse ↑/↓ and Enter\\n"' \
+	    '    else' \
+	    '        printf "  Keep Ada'\''s settings\\n\\033[7m> Remove Ada'\''s settings\\033[0m\\n\\nUse ↑/↓ and Enter\\n"' \
+	    '    fi' \
+	    '    IFS= read -rsn1 key' \
+	    '    case "$$key" in' \
+	    '        "") break ;;' \
+	    '        "$$esc")' \
+	    '            if IFS= read -rsn2 -t 0.2 key; then' \
+	    '                case "$$key" in' \
+	    '                    "[A") choice=0 ;;' \
+	    '                    "[B") choice=1 ;;' \
+	    '                esac' \
+	    '            fi' \
+	    '            ;;' \
+	    '    esac' \
+	    'done' \
+	    'case "$$choice" in' \
+	    '    0)' \
+	    '        ;;' \
+	    '    1)' \
+	    '        getent passwd | while IFS=: read -r _ _ _ _ _ home _; do' \
+	    '            if [ -n "$$home" ]; then' \
+	    '                rm -f -- "$$home/.config/AdaOffline.Q4_K_M.gguf" 2>/dev/null' \
+	    '                rm -rf -- "$$home/.config/ada" 2>/dev/null' \
+	    '            fi' \
+	    '        done' \
+	    '        ;;' \
+	    'esac' \
+	    >> ada_deb/DEBIAN/prerm
 
 	@printf 'rm -f /usr/share/applications/ada-virtual-assistant.desktop\n' >> ada_deb/DEBIAN/prerm
 	@chmod 755 ada_deb/DEBIAN/prerm
