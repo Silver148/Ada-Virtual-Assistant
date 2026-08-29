@@ -75,7 +75,7 @@ ada
 
 # Build Instructions
 If you want to compile Ada for your host OS, just use the `make` command. To compile for Windows from Linux, use `make CROSS=1`. To compile on Windows, just use the `make` command.
-> **Note for cross-compiling for Windows:** If you are compiling Ada for Windows from Linux, I recommend download the custom MinGW-w64 toolchain [here](https://github.com/Silver148/Mingw-w64-Toolchain/releases]). This package features the latest experimental GCC from the main branch, complete with POSIX threads and OpenMP support, which is highly recommended for building this project smoothly.
+> **Note for cross-compiling for Windows:** If you are compiling Ada for Windows from Linux, I recommend download the custom MinGW-w64 toolchain [here](https://github.com/Silver148/Mingw-w64-Toolchain/releases). This package features the latest experimental GCC from the main branch, complete with POSIX threads and OpenMP support, which is highly recommended for building this project smoothly.
 
 If you want to debug the app, compile it with the DEBUG=1 parameter, e.g.: `make DEBUG=1`, `make DEBUG=1 CROSS=1 all`
 
