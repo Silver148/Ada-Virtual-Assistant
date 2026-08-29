@@ -84,6 +84,6 @@ To clean the app compilation, use the `make clean_app` command. To clean everyth
 ## Packaging Instructions
 Use the `make make_debian_package` command to create the .deb package for Ada, and `make install_debian_package` to install the package on your system. On Linux, using `make` automatically creates the .tar.gz archive.
 
-On Windows, use the `make pack_for_windows` command to create the .zip file for Windows.
+On Windows, use the `make pack_for_windows` command to create the .zip file and setup for Windows.
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
