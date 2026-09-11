@@ -216,18 +216,16 @@ make_debian_package:
 	cp -r Ada_packed/* ada_deb/opt/ada/
 	cp desktop/ada-virtual-assistant.desktop ada_deb/usr/share/applications/
 
-	@mkdir -p ada_deb/usr/share/man/man1
-	cp deb_man/ada.1 ada_deb/usr/share/man/man1/ada.1
+	cp deb_man/ada-assistant.1 ada_deb/usr/share/man/man1/ada-assistant.1
 	@build_date="$$(LC_ALL=C date '+%B %d, %Y')"; \
-		sed -i "1c.TH ADA 1 \"$$build_date\" \"v$(VERSION)\" \"Ada Manual\"" \
-		ada_deb/usr/share/man/man1/ada.1
-	gzip -n -f ada_deb/usr/share/man/man1/ada.1
-	@ln -sf ada.1.gz ada_deb/usr/share/man/man1/ada-assistant.1.gz
+		sed -i "1c.TH ADA-ASSISTANT 1 \"$$build_date\" \"v$(VERSION)\" \"Ada Manual\"" \
+		ada_deb/usr/share/man/man1/ada-assistant.1
+	gzip -n -f ada_deb/usr/share/man/man1/ada-assistant.1
 
 	@printf '#!/bin/bash\nset -e\nln -sf /opt/ada/ada-launcher /usr/local/bin/ada\n' > ada_deb/DEBIAN/postinst
 	@chmod 755 ada_deb/DEBIAN/postinst
 
-	@printf '#!/bin/bash\nset -e\nrm -f /usr/local/bin/ada\n' > ada_deb/DEBIAN/prerm
+	@printf '#!/bin/bash\nset -e\nrm -f /usr/local/bin/ada\nrm -f /usr/share/man/man1/ada-assistant.1.gz\nmandb >/dev/null 2>&1 || true\n' > ada_deb/DEBIAN/prerm
 	@printf '%s\n' \
 	    'clear' \
 	    'printf "\\033[46m\\033[2J\\033[H"' \
@@ -280,6 +278,7 @@ make_debian_package:
 	@printf 'rm -f /usr/share/applications/ada-virtual-assistant.desktop\n' >> ada_deb/DEBIAN/prerm
 	@chmod 755 ada_deb/DEBIAN/prerm
 
+	@test -f ada_deb/usr/share/man/man1/ada-assistant.1.gz
 	@printf '%s\n' \
 		'Package: ada-assistant' \
 		"Version: $(VERSION)" \
@@ -292,6 +291,7 @@ make_debian_package:
 		> ada_deb/DEBIAN/control
 
 	dpkg-deb --root-owner-group --build ada_deb ada-assistant_$(VERSION)_amd64.deb
+	@dpkg-deb -c ada-assistant_$(VERSION)_amd64.deb | grep -q 'usr/share/man/man1/ada-assistant.1.gz' || { echo 'ERROR: Debian manual not found in package'; exit 1; }
 
 	rm -rf ada_deb
 	@echo "Debian Package successfully created: ada-assistant_$(VERSION)_amd64.deb"
