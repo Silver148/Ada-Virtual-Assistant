@@ -434,6 +434,91 @@ const Uint32 BACKSPACE_DELAY = 50;
 const int TARGET_FPS = 60;
 const std::chrono::milliseconds FRAME_DURATION(1000 / TARGET_FPS);
 
+static std::size_t utf8_next_codepoint_end(const std::string& text, std::size_t pos) {
+    if (pos >= text.size()) {
+        return pos;
+    }
+
+    const unsigned char c = static_cast<unsigned char>(text[pos]);
+    if ((c & 0x80u) == 0x00u) {
+        return pos + 1;
+    }
+    if ((c & 0xE0u) == 0xC0u) {
+        return std::min(pos + 2, text.size());
+    }
+    if ((c & 0xF0u) == 0xE0u) {
+        return std::min(pos + 3, text.size());
+    }
+    if ((c & 0xF8u) == 0xF0u) {
+        return std::min(pos + 4, text.size());
+    }
+
+    return pos + 1;
+}
+
+static std::size_t utf8_prev_codepoint_start(const std::string& text, std::size_t pos) {
+    if (pos == 0 || text.empty()) {
+        return 0;
+    }
+
+    std::size_t i = pos;
+    if (i > 0) {
+        --i;
+    }
+
+    while (i > 0 && (static_cast<unsigned char>(text[i]) & 0xC0u) == 0x80u) {
+        --i;
+    }
+
+    return i;
+}
+
+static void RebuildUserTextSurface(SDL_Renderer* renderer,
+                                  TTF_Font* font,
+                                  const std::string& text,
+                                  SDL_Surface*& surface,
+                                  SDL_Texture*& texture,
+                                  SDL_Rect& rect,
+                                  int areaX,
+                                  int areaY,
+                                  int maxInputWidth,
+                                  int areaH,
+                                  int& maxUserScrollY,
+                                  int& userScrollY) {
+    if (surface != nullptr) {
+        SDL_FreeSurface(surface);
+        surface = nullptr;
+    }
+    if (texture != nullptr) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+    }
+
+    surface = TTF_RenderUTF8_Blended_Wrapped(font, text.c_str(), {0, 0, 0, 255}, maxInputWidth);
+    if (surface == nullptr) {
+        rect = { areaX + 20, areaY + 20, 0, 0 };
+        maxUserScrollY = 0;
+        userScrollY = 0;
+        return;
+    }
+
+    texture = SDL_CreateTextureFromSurface(renderer, surface);
+    rect.x = areaX + 20;
+    rect.y = areaY + 20;
+    rect.w = surface->w;
+    rect.h = surface->h;
+
+    if (rect.h > (areaH - 40)) {
+        maxUserScrollY = rect.h - (areaH - 40);
+        if (userScrollY > maxUserScrollY) {
+            userScrollY = maxUserScrollY;
+        }
+    } else {
+        maxUserScrollY = 0;
+        userScrollY = 0;
+    }
+}
+
 void GUI::RenderGui(AI_ENGINE &AI) {
     bool running = true;
     bool fullscreen = false;
@@ -613,25 +698,9 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                 if (static_cast<unsigned char>(e.text.text[0]) >= 32) {
                     UserText.insert(cursorIndex, e.text.text);
                     cursorIndex += strlen(e.text.text);
-                
-                    if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                    if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
-
-                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
-                    UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
-
-                    UserTextRect.x = UserArea.x + 20;
-                    UserTextRect.y = UserArea.y + 20;
-                    UserTextRect.w = UserTextSurface->w;
-                    UserTextRect.h = UserTextSurface->h;
-
-                    if (UserTextRect.h > (UserArea.h - 40)) {
-                        maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                        userScrollY = maxUserScrollY; // Auto-scroll
-                    } else {
-                        maxUserScrollY = 0;
-                        userScrollY = 0;
-                    }
+                    RebuildUserTextSurface(renderer, UserTextFont, UserText, UserTextSurface, UserTextTexture,
+                                          UserTextRect, UserArea.x, UserArea.y, maxInputWidth, UserArea.h,
+                                          maxUserScrollY, userScrollY);
                 }
             } else if (e.type == SDL_AUDIODEVICEADDED) {
                 if (stt.mic == 0 && e.adevice.iscapture) {
@@ -703,31 +772,23 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                         cursorIndex = start_del;
 
                         if (!UserText.empty()) {
-                            if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                            if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
-
-                            UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
-                            UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
-
-                            UserTextRect.w = UserTextSurface->w;
-                            UserTextRect.h = UserTextSurface->h;
-
-                            if (UserTextRect.h > (UserArea.h - 40)) {
-                                maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                                if (userScrollY > maxUserScrollY) userScrollY = maxUserScrollY;
-                            } else {
-                                maxUserScrollY = 0;
-                                userScrollY = 0;
-                            }
+                            RebuildUserTextSurface(renderer, UserTextFont, UserText, UserTextSurface, UserTextTexture,
+                                                  UserTextRect, UserArea.x, UserArea.y, maxInputWidth, UserArea.h,
+                                                  maxUserScrollY, userScrollY);
                         } else {
                             if (UserTextTexture != nullptr) {
                                 SDL_DestroyTexture(UserTextTexture);
                                 UserTextTexture = nullptr;
                             }
+                            if (UserTextSurface != nullptr) {
+                                SDL_FreeSurface(UserTextSurface);
+                                UserTextSurface = nullptr;
+                            }
+                            UserTextRect = { UserArea.x + 20, UserArea.y + 20, 0, 0 };
                             maxUserScrollY = 0;
                             userScrollY = 0;
                             cursorIndex = 0;
-                        }   
+                        }
                     } else if (UserText.empty() || cursorIndex <= 0) {
                         if (UserText.empty()) {
                             cursorIndex = 0;
@@ -744,23 +805,11 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                     }
                 } else if (e.key.keysym.sym == SDLK_LEFT) {
                     if (cursorIndex > 0) {
-                        cursorIndex--;
-
-                        while (cursorIndex > 0 && 
-                              (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
-                               static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
-                            cursorIndex--;
-                        }   
+                        cursorIndex = utf8_prev_codepoint_start(UserText, cursorIndex);
                     }
                 } else if (e.key.keysym.sym == SDLK_RIGHT) {
                     if (cursorIndex < UserText.length()) {
-                        cursorIndex++;
-                        
-                        while (cursorIndex < UserText.length() && 
-                              (static_cast<unsigned char>(UserText[cursorIndex]) >= 128 && 
-                               static_cast<unsigned char>(UserText[cursorIndex]) <= 191)) {
-                            cursorIndex++;
-                        }   
+                        cursorIndex = utf8_next_codepoint_end(UserText, cursorIndex);
                     }
                 } else if (e.key.keysym.sym == SDLK_F11) {
                     if (!fullscreen) {
@@ -773,32 +822,20 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                 }else if(e.key.keysym.sym == SDLK_v && ctrl){
                     
                     if(SDL_HasClipboardText()){
-                        UserText.insert(cursorIndex, SDL_GetClipboardText());
-                        cursorIndex += strlen(SDL_GetClipboardText());
-
-                        if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                        if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
-
-                        UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
-                        UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
-
-                        UserTextRect.x = UserArea.x + 20;
-                        UserTextRect.y = UserArea.y + 20;
-                        UserTextRect.w = UserTextSurface->w;
-                        UserTextRect.h = UserTextSurface->h;
-
-                        if (UserTextRect.h > (UserArea.h - 40)) {
-                            maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                            userScrollY = maxUserScrollY; 
-                        } else {
-                            maxUserScrollY = 0;
-                            userScrollY = 0;
+                        const char* clipboardText = SDL_GetClipboardText();
+                        if (clipboardText != nullptr && clipboardText[0] != '\0') {
+                            UserText.insert(cursorIndex, clipboardText);
+                            cursorIndex += std::strlen(clipboardText);
+                            RebuildUserTextSurface(renderer, UserTextFont, UserText, UserTextSurface, UserTextTexture,
+                                                  UserTextRect, UserArea.x, UserArea.y, maxInputWidth, UserArea.h,
+                                                  maxUserScrollY, userScrollY);
                         }
                     }
 
                 } else if (e.key.keysym.sym == SDLK_RETURN && !UserText.empty() && !IsThinking) {
                     std::string prompt = UserText;
-                    UserText = "";
+                    UserText.clear();
+                    cursorIndex = 0;
 
                     /*DESTROY IF LINE TEXTURE HAS TEXT*/
                     for (SDL_Texture* tex : lineTextures) {
@@ -1306,9 +1343,20 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                 cursorIndex = UserText.length();
             }
 
-            if (cursorIndex > 0) {
+            if (UserText.empty()) {
+                UserTextRect.x = UserArea.x + 20;
+                UserTextRect.y = UserArea.y + 20;
+                UserTextRect.w = 0;
+                UserTextRect.h = 0;
+            } else if (UserTextTexture != nullptr && UserTextRect.w == 0 && UserTextRect.h == 0) {
+                UserTextRect.x = UserArea.x + 20;
+                UserTextRect.y = UserArea.y + 20;
+            }
+
+            if (cursorIndex > 0 && cursorIndex < UserText.length() &&
+                (static_cast<unsigned char>(UserText[cursorIndex]) & 0xC0u) == 0x80u) {
                 while (cursorIndex > 0 &&
-                       (static_cast<unsigned char>(UserText[cursorIndex - 1]) & 0xC0) == 0x80) {
+                       (static_cast<unsigned char>(UserText[cursorIndex]) & 0xC0u) == 0x80u) {
                     cursorIndex--;
                 }
             }
@@ -1426,26 +1474,10 @@ void GUI::RenderGui(AI_ENGINE &AI) {
                 std::string newMicText = stt.TextFromMic();
                 if (isListening && !newMicText.empty()) {
                     UserText.insert(cursorIndex, newMicText);
-                    cursorIndex += strlen(newMicText.c_str());
-                    
-                    if (UserTextSurface != nullptr) SDL_FreeSurface(UserTextSurface);
-                    if (UserTextTexture != nullptr) SDL_DestroyTexture(UserTextTexture);
-
-                    UserTextSurface = TTF_RenderUTF8_Blended_Wrapped(UserTextFont, UserText.c_str(), {0, 0, 0, 255}, maxInputWidth);
-                    UserTextTexture = SDL_CreateTextureFromSurface(renderer, UserTextSurface);
-
-                    UserTextRect.x = UserArea.x + 20;
-                    UserTextRect.y = UserArea.y + 20;
-                    UserTextRect.w = UserTextSurface->w;
-                    UserTextRect.h = UserTextSurface->h;
-
-                    if (UserTextRect.h > (UserArea.h - 40)) {
-                        maxUserScrollY = UserTextRect.h - (UserArea.h - 40);
-                        userScrollY = maxUserScrollY; 
-                    } else {
-                        maxUserScrollY = 0;
-                        userScrollY = 0;
-                    }
+                    cursorIndex += std::strlen(newMicText.c_str());
+                    RebuildUserTextSurface(renderer, UserTextFont, UserText, UserTextSurface, UserTextTexture,
+                                          UserTextRect, UserArea.x, UserArea.y, maxInputWidth, UserArea.h,
+                                          maxUserScrollY, userScrollY);
                 }
 
                 if (isListening && (SDL_GetTicks() % 1000 < 500)) {

@@ -62,7 +62,7 @@ private:
     TTF_Font* UserTextFont = nullptr;
     SDL_Surface* UserTextSurface = nullptr;
     SDL_Texture* UserTextTexture = nullptr;
-    SDL_Rect UserTextRect;
+    SDL_Rect UserTextRect = { 0, 0, 0, 0 };
 
     TTF_Font* AdaTextFont = nullptr;
     SDL_Surface* AdaTextSurface = nullptr;
