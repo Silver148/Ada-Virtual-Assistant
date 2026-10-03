@@ -47,6 +47,8 @@ public:
     AI_ENGINE(const std::string& model);
     ~AI_ENGINE();
 
+    std::string ShowModels(std::vector<std::string> result, bool free);
+
     void SetSystemPrompt(const std::string &sys_prompt);
 
     void SetOfflineSystemPrompt(const std::string &sys_prompt);

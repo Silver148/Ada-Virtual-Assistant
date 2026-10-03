@@ -154,14 +154,59 @@ bool CanUseOfflineMode() {
     return true;
 }
 
-std::vector<std::string> AIModels = {
-    "1. Nemotron-3 Ultra (pros: Maximum intelligence and deep reasoning for complex tasks. cons: Higher response times because it's a massive model and it can crash at certain times because it is heavily used.)",
-    "2. Nemotron-3 Nano (30B A3B) (pros: The perfect balance between smart answers and stability. cons: Shared community endpoint resources.)",
-    "3. GPT-20B (Reasoning) (pros: Great analytical capability for daily tasks. cons: Takes a bit to process due to its internal thinking process.)",
-    "4. Laguna XS 2.1 (Coding) (pros: Blazing fast responses and optimized natively for programming. cons: Strictly focused on speed and code.)"
-};
-
+std::vector<std::string> AIModels;
 std::string defaultAIModel = "";
+
+std::string SelectModel(bool free) {
+    AI_ENGINE catalog("");
+    const std::string response = catalog.ShowModels({}, free);
+
+    try {
+        const json parsed = json::parse(response);
+        if (!parsed.is_array()) {
+            std::cerr << "Could not retrieve the model list: "
+                      << response << std::endl;
+            return "";
+        }
+
+        std::vector<std::string> models;
+        for (const auto& item : parsed) {
+            if (item.is_string()) {
+                models.push_back(item.get<std::string>());
+            }
+        }
+
+        if (models.empty()) {
+            std::cerr << "No models are available." << std::endl;
+            return "";
+        }
+
+        std::cout << "Available models:" << std::endl;
+        for (const auto& model : models) {
+            std::cout << "  " << model << std::endl;
+        }
+
+        std::string selection;
+        while (true) {
+            std::cout << "Enter the model ID you want to use: ";
+            if (!std::getline(std::cin, selection)) {
+                return "";
+            }
+
+            for (const auto& model : models) {
+                if (selection == model) {
+                    return selection;
+                }
+            }
+
+            std::cout << "Invalid model ID. Please choose one from the list."
+                      << std::endl;
+        }
+    } catch (const json::exception& e) {
+        std::cerr << "Could not parse the model list: " << e.what() << std::endl;
+        return "";
+    }
+}
 
 int main(int argc, char* argv[]){
     
@@ -236,56 +281,26 @@ int main(int argc, char* argv[]){
                 break;
             }
 
-            std::cout << "Select the AI model :) (1-4)" << std::endl;
-            std::cout << std::endl;
-
-            for(auto m : AIModels){
-                std::cout << m << std::endl;
+            std::cout << "Do you want to use free models or paid models? (free/paid): ";
+            std::string freeChoice;
+            bool useFree = true;
+        
+            while (true) {
+                std::getline(std::cin, freeChoice);
+                if (freeChoice == "free") {
+                    useFree = true;
+                    break;
+                } else if (freeChoice == "paid") {
+                    useFree = false;
+                    break;
+                }
+               std::cout << "Invalid input. Please enter 'free' or 'paid': ";
             }
 
-            std::cout << std::endl;
-
-            int option = 0;
-            std::string inputStr = "";
-
-            while(option < 1 || option > 4){
-                std::cout << "Select an option (1-4): ";
-                std::getline(std::cin, inputStr);
-
-                if (inputStr.empty()) {
-                    std::cout << "Invalid input! Please enter a number." << std::endl;
-                    continue;
-                }
-
-                try{
-                    size_t processedChars = 0;
-                    option = std::stoi(inputStr, &processedChars);
-
-                    if (processedChars < inputStr.size()) {
-                        option = 0;
-                        std::cout << "Invalid input! Please enter ONLY numbers." << std::endl;
-                        continue;
-                    }
-
-                }catch(...){
-                    option = 0;
-                    std::cout << "Invalid input! Please enter a valid number." << std::endl;
-                    continue;
-                }
-
-                if (option < 1 || option > 4) {
-                    std::cout << "That option isn't valid, please just 1-4." << std::endl;
-                }
-            }
-
-            if (option == 1)
-                defaultAIModel = "nvidia/nemotron-3-ultra-550b-a55b:free";
-            else if (option == 2)
-                defaultAIModel = "nvidia/nemotron-3-nano-30b-a3b:free";
-            else if (option == 3)
-                defaultAIModel = "openai/gpt-oss-20b:free";
-            else if (option == 4)
-                defaultAIModel = "poolside/laguna-xs-2.1:free";
+            defaultAIModel = SelectModel(useFree);
+            if (defaultAIModel.empty()) {
+                return 1;
+            } 
                 
             std::ofstream WriteDefaultModelFile(DefaultModelPath);
             WriteDefaultModelFile << defaultAIModel;
@@ -368,56 +383,26 @@ int main(int argc, char* argv[]){
             break;
         }
 
-        std::cout << "Select the AI model :) (1-4)" << std::endl;
-        std::cout << std::endl;
+        std::cout << "Do you want to use free models or paid models? (free/paid): ";
+        std::string freeChoice;
+        bool useFree = true;
 
-        for(auto m : AIModels){
-            std::cout << m << std::endl;
+        while (true) {
+            std::getline(std::cin, freeChoice);
+            if (freeChoice == "free") {
+                useFree = true;
+                break;
+            } else if (freeChoice == "paid") {
+                useFree = false;
+                break;
+            }
+           std::cout << "Invalid input. Please enter 'free' or 'paid': ";
         }
 
-        std::cout << std::endl;
-
-        int option = 0;
-        std::string inputStr = "";
-        
-        while(option < 1 || option > 4){
-            std::cout << "Select an option (1-4): ";
-            std::getline(std::cin, inputStr);
-
-            if (inputStr.empty()) {
-                std::cout << "Invalid input! Please enter a number." << std::endl;
-                continue;
-            }
-
-            try{
-                size_t processedChars = 0;
-                option = std::stoi(inputStr, &processedChars);
-
-                if (processedChars < inputStr.size()) {
-                    option = 0;
-                    std::cout << "Invalid input! Please enter ONLY numbers." << std::endl;
-                    continue;
-                }
-
-            }catch(...){
-                option = 0;
-                std::cout << "Invalid input! Please enter a valid number." << std::endl;
-                continue;
-            }
-
-            if (option < 1 || option > 4) {
-                std::cout << "That option isn't valid, please just 1-4." << std::endl;
-            }
-        }
-
-        if (option == 1)
-            defaultAIModel = "nvidia/nemotron-3-ultra-550b-a55b:free";
-        else if (option == 2)
-            defaultAIModel = "nvidia/nemotron-3-nano-30b-a3b:free";
-        else if (option == 3)
-            defaultAIModel = "openai/gpt-oss-20b:free";
-        else if (option == 4)
-            defaultAIModel = "poolside/laguna-xs-2.1:free";
+        defaultAIModel = SelectModel(useFree);
+        if (defaultAIModel.empty()) {
+            return 1;
+        } 
                 
         std::ofstream DefaultModelFile(DefaultModelPath);
         DefaultModelFile << defaultAIModel;

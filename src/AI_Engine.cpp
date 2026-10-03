@@ -55,6 +55,106 @@ void AI_ENGINE::SaveMemories(const std::string &file){
     }
 }
 
+std::string AI_ENGINE::ShowModels(std::vector<std::string> models, bool free) {
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        return "Error: no se pudo inicializar cURL.";
+    }
+
+    std::string result;
+    curl_easy_setopt(curl, CURLOPT_URL, "https://openrouter.ai/api/v1/models");
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 10L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
+
+    const CURLcode curl_result = curl_easy_perform(curl);
+
+    long http_code = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+    curl_easy_cleanup(curl);
+
+    if (curl_result != CURLE_OK) {
+        return std::string("Error to get models: ") +
+               curl_easy_strerror(curl_result);
+    }
+    if (http_code < 200 || http_code >= 300) {
+        return "Error: OpenRouter reply with the HTTP Code " +
+               std::to_string(http_code);
+    }
+
+    auto lowercase = [](std::string value) {
+        std::transform(value.begin(), value.end(), value.begin(),
+            [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            });
+        return value;
+    };
+
+    auto is_zero = [](const json& value) {
+        try {
+            if (value.is_number()) {
+                return value.get<double>() == 0.0;
+            }
+            if (value.is_string()) {
+                const std::string text = value.get<std::string>();
+                std::size_t parsed = 0;
+                const double price = std::stod(text, &parsed);
+                return parsed == text.size() && price == 0.0;
+            }
+        } catch (...) {
+        }
+        return false;
+    };
+
+    try {
+        const json response = json::parse(result);
+        if (!response.contains("data") || !response["data"].is_array()) {
+            return "Error: invalid answer from the OpenRouter";
+        }
+
+        json ids = json::array();
+
+        for (const auto& model : response["data"]) {
+            const std::string id = model.value("id", "");
+            const std::string name = model.value("name", "");
+
+            if (id.empty()) {
+                continue;
+            }
+
+            if (!models.empty()) {
+                const std::string searchable = lowercase(id + " " + name);
+                const bool matches = std::any_of(
+                    models.begin(), models.end(),
+                    [&searchable, &lowercase](const std::string& filter) {
+                        return searchable.find(lowercase(filter)) !=
+                               std::string::npos;
+                    });
+
+                if (!matches) {
+                    continue;
+                }
+            }
+
+            if (free) {
+                const json pricing = model.value("pricing", json::object());
+
+                if (!is_zero(pricing.value("prompt", json())) ||
+                    !is_zero(pricing.value("completion", json()))) {
+                    continue;
+                }
+            }
+
+            ids.push_back(id);
+        }
+
+        return ids.dump(4);
+    } catch (const json::exception& e) {
+        return std::string("Error to proccess models OpenRouter JSON ") + e.what();
+    }
+}
+
 AI_ENGINE::AI_ENGINE(const std::string& model){
     AI_config["model"] = model;
     defaultModel = model;
