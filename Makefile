@@ -5,8 +5,6 @@ MAKE_CMD = $(MAKE)
 DEBUG ?= 0
 BUILD_JOBS ?= $(shell nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 3)
 
-CCACHE ?= 0
-
 ifeq ($(OS),Windows_NT)
 	CROSS = 1
 endif
@@ -100,11 +98,6 @@ OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SOURCES))
 OBJ_LIST = $(OBJECTS) $(RES_OBJ)
 
 all: compile_md4c compile_llama-server $(EXE) pack_exe
-
-ifeq ($(CCACHE), 1)
-    CPP := ccache $(CPP)
-    CC := ccache $(CC)
-endif
 
 $(EXE): $(OBJECTS) $(RES_OBJ) Makefile
 	$(CPP) $(OBJ_LIST) -o $(EXE) $(LIBS)

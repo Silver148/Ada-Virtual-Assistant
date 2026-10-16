@@ -8,8 +8,8 @@
 #include <iostream>
 #include <thread>
 #include <atomic>
-#include <md4c.h>
 #include <mutex>
+#include <vector>
 #include "Reminders.hpp"
 #include "Talk.hpp"
 #include "AI_Engine.hpp"
@@ -17,6 +17,7 @@
 #if defined(_WIN32) || defined(_WIN64)
     #include "SearchEXE.hpp"
     #include <windows.h>
+    #include <shlobj.h>
 #endif
 #if defined(__linux__) || defined(__unix__)
 #include "Audio_Engine.hpp"
@@ -35,13 +36,15 @@ enum LineType {
 
 struct TextStyleToken {
     std::string text;
-    bool isBold;
+    bool isBold = false;
 };
 
 struct RenderLine {
-    LineType type;
+    LineType type = LINE_NORMAL;
     std::vector<TextStyleToken> tokens;
 };
+
+struct UiContext; // Per-frame UI state, defined in GUI.cpp
 
 class GUI{
 
@@ -49,45 +52,31 @@ private:
     SDL_Window* window = nullptr;
     SDL_Renderer* renderer = nullptr;
 
-    SDL_Surface* Ada_SpriteSheet_surface = nullptr;
     SDL_Texture* Ada_SpriteSheet_texture = nullptr;
-
-    SDL_Rect Ada_dest_rect;
-    SDL_Rect Ada_src_rect;
+    SDL_Rect Ada_dest_rect = { 0, 0, 0, 0 };
+    SDL_Rect Ada_src_rect = { 0, 0, 0, 0 };
 
     std::string UserText;
-    std::string ResponseText;
+    std::string ResponseText;   // Written by the AI thread, always guarded by responseMutex
     std::string LastResponse;
 
     TTF_Font* UserTextFont = nullptr;
-    SDL_Surface* UserTextSurface = nullptr;
     SDL_Texture* UserTextTexture = nullptr;
     SDL_Rect UserTextRect = { 0, 0, 0, 0 };
 
     TTF_Font* AdaTextFont = nullptr;
-    SDL_Surface* AdaTextSurface = nullptr;
     std::vector<RenderLine> parsedLines;
     std::vector<SDL_Texture*> lineTextures;
     std::vector<SDL_Rect> lineRects;
-    SDL_Rect AdaTextRect;
 
     TTF_Font* CopyFont = nullptr;
-    SDL_Surface* CopySurface = nullptr;
     SDL_Texture* CopyTexture = nullptr;
-    SDL_Rect CopyRect;
-    SDL_Rect CopyButton;
 
     TTF_Font* TextVoiceButton_font = nullptr;
-    SDL_Surface* TextVoiceButton_surf = nullptr;
     SDL_Texture* TextVoiceButton_tex = nullptr;
-    SDL_Rect TextVoiceButton;
-    SDL_Rect VoiceButton;
 
     TTF_Font* Mode_font = nullptr;
-    SDL_Surface* Mode_surf = nullptr;
     SDL_Texture* Mode_tex = nullptr;
-    SDL_Rect TextMode;
-    SDL_Rect ModeButton;
 
     SDL_Texture* thinking_texture = nullptr;
 
@@ -98,41 +87,88 @@ private:
     int maxUserScrollY = 0;
 
     Reminders reminders;
+    std::mutex remindersMutex;  // CreateReminder (AI thread) vs CheckReminders (main thread)
 
-#if defined(__linux__ ) || defined(__unix___)
+#if defined(__linux__ ) || defined(__unix__)
     AudioEngine audioEngine;
 #endif
 
     AdaVoice voice;
 
-    bool IsThinking = false;
-    bool VoiceIsActive = false;
+    std::atomic<bool> IsThinking{false};
+    std::atomic<bool> VoiceIsActive{false};
+    std::atomic<bool> LocalMode{false};
 
-    bool LocalMode = false;
-    std::atomic<bool> switchingToOffline = false;
-    std::atomic<int> offlineSwitchResult = 0; // 0 = none, 1 = success, 2 = failure
+    std::atomic<bool> switchingToOffline{false};
+    std::atomic<int> offlineSwitchResult{0}; // 0 = none, 1 = success, 2 = failure
+    std::atomic<int> pendingGesture{-1};     // -1 = none, applied by the main thread
     std::thread offlineSwitchThread;
+    std::thread aiThread;
+    std::mutex responseMutex;
 
     SDL_Texture* switchingModeTexture = nullptr;
-    SDL_Rect switchingModeRect;
+    SDL_Rect switchingModeRect = { 0, 0, 0, 0 };
 
     size_t cursorIndex = 0;
 
     STT stt;
     bool isListening = false;
 
-    std::mutex mutexConsole;
-    
+    /* Setup / teardown */
+    void Setup();
+    void ReleaseResources();
+    void JoinWorkers();
+
+    /* Helpers shared by the event handlers */
+    void SetModeLabel(const char* text);
+    void DestroyLineTextures();
+    void ResetResponse();
+    void ClearUserTexture();
+    void RebuildUserText();
+    void InsertUserText(const std::string& text);
+    void PasteFromClipboard();
+    void NormalizeCursor();
+    void ApplyPendingGesture();
+
+    /* Input */
+    void HandleEvent(const SDL_Event& e, UiContext& ui, AI_ENGINE& AI);
+    void HandleMouseWheel(const SDL_MouseWheelEvent& wheel, const UiContext& ui);
+    void HandleLeftClick(int x, int y, AI_ENGINE& AI);
+    void HandleKeyDown(const SDL_KeyboardEvent& key, UiContext& ui, AI_ENGINE& AI);
+    void HandleBackspace(UiContext& ui);
+    void HandleModeButton(AI_ENGINE& AI);
+    void HandleVoiceButton();
+    void ToggleListening();
+    void StartOfflineSwitch(AI_ENGINE& AI);
+
+    /* AI request */
+    void SubmitPrompt(AI_ENGINE& AI);
+    void RunAIRequest(AI_ENGINE& AI, const std::string& prompt, bool useOffline);
+    void ProcessAICommands(std::string& response);
+    void CreateReminderFromTag(const std::string& value);
+
+    /* Per-frame updates and drawing */
+    void UpdateModeSwitchResult();
+    void UpdateResponseView();
+    void UpdateMicInput();
+    void DrawFrame(const UiContext& ui);
+    void DrawButtons(const UiContext& ui);
+    void DrawResponseText();
+    void DrawUserInput();
+
+    void ProcessAIResponse(const std::string& rawText);
+    void MakeResponseTexture(SDL_Rect ResponseArea);
+
 public:
 
     GUI();
     ~GUI();
 
-    void RenderGui(AI_ENGINE &AI);
-    void AdaGestures(int id);
+    GUI(const GUI&) = delete;
+    GUI& operator=(const GUI&) = delete;
 
-    void ProcessAIResponse(const std::string& rawText);
-    void MakeResponseTexture(SDL_Rect ResponseArea);
+    void RenderGui(AI_ENGINE &AI);
+    void AdaGestures(int id); // Thread-safe: the frame is applied by the render loop
 
 };
 

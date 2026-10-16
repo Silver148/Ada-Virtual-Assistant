@@ -574,6 +574,11 @@ int main(int argc, char* argv[]){
     "- Regla estricta: 'X' es el comando que pida el usuario(más parámetros en el caso que el comando los tenga), no confundas abrir una app con ejecutar un comando."
     "(siempre comprueba si el usuario pide abrir UNA APP o ejecutar UN COMANDO).\n"
     "- Seguridad del sistema: Comprueba que el comando que pida el usuario sea seguro para el sistema operativo, en el caso contrario rechaza gentilmente.\n"
+    
+    "## 7. ABRIR CARPETAS \n"
+    "- Activación: Pedir que le abras una carpeta específica del equipo.\n"
+    "- Formato: `[CMD_OPENFOLDER: FOLDER=X]`\n"
+    "- Regla estricta: 'X' es el nombre de la carpeta solicitada. Si el sistema operativo es Windows, los nombres de las carpetas de usuario por defecto están siempre en inglés (por ejemplo, \"Documents\", \"Downloads\", \"Desktop\"), por lo que debes usar el término en inglés correspondiente a la carpeta que pide el usuario, a menos que se especifique una ruta personalizada o localizada exacta.\n"
 
     "# REGLAS CRÍTICAS DE CONTROL (¡NUNCA VIOLAR!)\n"
     "1. UBICACIÓN DEL GESTO: Está PROHIBIDO colocar el token de gesto en el medio del texto. Va siempre al terminar tu mensaje.\n"
@@ -656,6 +661,11 @@ int main(int argc, char* argv[]){
     "- Formato: `[CMD_SYSCMD: CMD=X]`\n"
     "- Regla estricta: 'X' es el comando que pida el usuario(más parámetros en el caso que el comando los tenga)."
     "- Seguridad del sistema: Comprueba que el comando que pida el usuario sea seguro para el sistema operativo, en el caso contrario rechaza gentilmente."
+
+    "## 7. ABRIR CARPETAS \n"
+    "- Activación: Pedir que le abras una carpeta específica del equipo.\n"
+    "- Formato: `[CMD_OPENFOLDER: FOLDER=X]`\n"
+    "- Regla estricta: 'X' es el nombre de la carpeta solicitada. Si el sistema operativo es Linux (donde las carpetas de usuario suelen estar traducidas según la configuración regional), determina el nombre de la carpeta traduciéndolo de forma natural al idioma en el que se esté realizando la interacción (por ejemplo, \"Documents\" o \"Documentos\", \"Downloads\" o \"Descargas\"), a menos que el usuario especifique una ruta exacta.\n"
 
     "# REGLAS CRÍTICAS DE CONTROL (¡NUNCA VIOLAR!)\n"
     "1. UBICACIÓN DEL GESTO: Está PROHIBIDO colocar el token de gesto en el medio del texto. Va siempre al terminar tu mensaje.\n"
