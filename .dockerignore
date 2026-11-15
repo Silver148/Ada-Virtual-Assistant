@@ -1,0 +1,19 @@
+# GitHub workflow and Git history
+.git
+.github
+
+# Windows-exclusive folder and files
+SDL2-Mingw/
+vosk_win64/
+win_setup/
+*.exe
+*.zip
+resource.rc
+
+# Build artifacts
+Ada
+obj
+
+# Linux build packages
+*.tar.gz
+*.deb
