@@ -2,6 +2,9 @@
 
 ![Ada_Logo](Ada-ICON.png)
 
+[![Docker Image CI](https://github.com/Silver148/Ada-Virtual-Assistant/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Silver148/Ada-Virtual-Assistant/actions/workflows/docker-image.yml)
+
+
 **Ada** is a desktop virtual assistant natively developed in **C++** using **SDL2** for the graphical interface and the **OpenRouter** API for the artificial intelligence engine. It features a fluent Spanish voice system through the Windows SAPI API (PicoTTS is used on Linux) and persistent conversation memory.
 
 ---
