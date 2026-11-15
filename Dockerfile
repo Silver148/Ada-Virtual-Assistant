@@ -42,7 +42,7 @@ RUN echo "=== Well... It's time to copy Ada source code :D ==="
 COPY . .
 
 RUN echo "=== LET'S GO, COMPILING ADA... ===" && \
-    make -j$(nproc)
+    make
 
 WORKDIR /Ada/Ada-Virtual-Assistant/Ada_packed
 
